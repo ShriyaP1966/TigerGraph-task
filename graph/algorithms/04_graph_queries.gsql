@@ -38,23 +38,13 @@ CREATE OR REPLACE QUERY find_fraud_ring(VERTEX<Card> seed_card, INT max_hops=3) 
                 @@shared_groups += ("device:" + e.device_id -> c2.card_id)
               POST-ACCUM c2.@visited = true, c2.@hop_distance = hop;
 
-    NextEmail = SELECT c2
-              FROM Frontier:c1 -(SHARES_EMAIL:e)- Card:c2
-              WHERE c2.@visited == false
-              ACCUM
-                @@shared_groups += ("email_domain:" + e.domain -> c1.card_id),
-                @@shared_groups += ("email_domain:" + e.domain -> c2.card_id)
-              POST-ACCUM c2.@visited = true, c2.@hop_distance = hop;
+    // Device-only for now. SHARES_ADDRESS and SHARES_EMAIL are deliberately not
+    // walked: even capped (60 cards/region, 30 cards/domain) they chained 2-hop
+    // rings into thousands of cards (address: HHG-008 2,617 and HHG-011 4,371;
+    // email: HHG-018 2,541 -- vs 21 / 12 / 0 on the local backend). The edges
+    // stay built; re-enable once thresholds are tuned.
 
-    NextAddr = SELECT c2
-              FROM Frontier:c1 -(SHARES_ADDRESS:e)- Card:c2
-              WHERE c2.@visited == false
-              ACCUM
-                @@shared_groups += ("billing_region:" + e.region_code -> c1.card_id),
-                @@shared_groups += ("billing_region:" + e.region_code -> c2.card_id)
-              POST-ACCUM c2.@visited = true, c2.@hop_distance = hop;
-
-    Frontier = NextDev UNION NextEmail UNION NextAddr;
+    Frontier = NextDev;
   END;
 
   // Print every card visited (the whole local ring), not just the last hop's
