@@ -1,9 +1,8 @@
 """Human-in-the-loop approval queue: every decisions_and_actions[] entry,
 across all cases, where requires_approval is true and status is still
 recommended/pending_approval. Approve/Reject write through
-lib.mock_actions.record_decision() — the only place that mutates decision
-status — so swapping in P2's real approval API later means changing that
-one function, not this component.
+lib.mock_actions.record_decision(), which now calls the real api.approve()
+(sqlite-backed policy ledger) — the only place that mutates decision status.
 """
 
 from __future__ import annotations
@@ -16,15 +15,14 @@ from lib import mock_actions
 from lib.styling import approval_route_badge, decision_status_badge, esc
 
 _PENDING_STATUSES = {"recommended", "pending_approval"}
-_ANALYST_ACTOR = "analyst (dashboard, mock approval)"
+_ANALYST_ACTOR = "analyst (dashboard)"
 
 
 def render_approval_queue(cases: list[dict[str, Any]]) -> None:
     st.markdown('<div class="section-label">Pending approvals</div>', unsafe_allow_html=True)
     st.caption(
-        "Actions that require human sign-off before being executed. Approve/Reject write to a local "
-        "mock audit ledger (ui/.local/audit_ledger.json) — swap in P2's live approval API by replacing "
-        "lib/mock_actions.record_decision()."
+        "Actions that require human sign-off before being executed. Approve/Reject write to the real "
+        "action ledger (ledger.sqlite3) via api.approve() — the same policy gate the agent itself uses."
     )
 
     pending: list[tuple[dict[str, Any], dict[str, Any]]] = []
