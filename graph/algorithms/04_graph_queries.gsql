@@ -57,7 +57,11 @@ CREATE OR REPLACE QUERY find_fraud_ring(VERTEX<Card> seed_card, INT max_hops=3) 
     Frontier = NextDev UNION NextEmail UNION NextAddr;
   END;
 
-  PRINT Frontier[Frontier.card_id, Frontier.customer_id, Frontier.@hop_distance];
+  // Print every card visited (the whole local ring), not just the last hop's
+  // Frontier -- that is empty whenever the walk stops before max_hops, which
+  // made every ring come back with 0 cards. tools.py reads "Cluster".
+  Cluster = SELECT c FROM Card:c WHERE c.@visited == true;
+  PRINT Cluster;
   PRINT @@shared_groups AS shared_attributes;
 }
 
