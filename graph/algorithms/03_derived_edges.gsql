@@ -27,65 +27,47 @@
 //   gsql -g FraudGraph "RUN QUERY build_shares_address(60)"
 // ============================================================================
 
+// Query bodies below were exported verbatim from the live TigerGraph Cloud
+// instance (graph FraudGraph) on 2026-09-24, where P1 fixed them directly
+// (all status VALID, not yet installed). Comments are from the repo version.
+// UNREVIEWED DIVERGENCE: the live build_shares_email/address take no max_cards
+// parameter, so the blowup guard described above is gone and the RUN examples
+// with (30)/(60) will not match. Pairs use c1 != c2 (both directions), not <.
+
 USE GRAPH FraudGraph
 
 CREATE OR REPLACE QUERY build_shares_device() FOR GRAPH FraudGraph SYNTAX v2 {
-  // Every pair of distinct cards whose transactions touched the same
-  // device profile. No threshold: device fingerprints are specific enough
-  // that even a handful of shared cards is a meaningful signal.
-  Pairs =
-    SELECT c2
-    FROM DeviceProfile:d -(reverse_FROM_DEVICE:e1)- Transaction:t1
-                         -(reverse_MADE:e2)- Card:c1,
-         d -(reverse_FROM_DEVICE:e3)- Transaction:t2
-           -(reverse_MADE:e4)- Card:c2
-    WHERE c1.card_id < c2.card_id
-    ACCUM INSERT INTO SHARES_DEVICE VALUES (c1, c2, d.device_id);
-  PRINT "build_shares_device done";
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(FROM_DEVICE>)- DeviceProfile:d
+                  -(<FROM_DEVICE)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_DEVICE VALUES (c1, c2, d.device_id);
+      
+  PRINT X;
 }
 
-CREATE OR REPLACE QUERY build_shares_email(INT max_cards) FOR GRAPH FraudGraph SYNTAX v2 {
-  // Skip domains that are too common to be a ring signal.
-  SumAccum<INT> @@dummy;
-  SetAccum<STRING> @cards_at_domain;
-
-  Domains = SELECT dom
-            FROM EmailDomain:dom -(reverse_PURCHASER_EMAIL:e)- Transaction:t
-                                 -(reverse_MADE:e2)- Card:c
-            ACCUM dom.@cards_at_domain += c.card_id;
-
-  Domains = SELECT dom FROM Domains:dom
-            WHERE dom.@cards_at_domain.size() >= 2 AND dom.@cards_at_domain.size() <= max_cards;
-
-  Pairs =
-    SELECT c2
-    FROM Domains:dom -(reverse_PURCHASER_EMAIL:e1)- Transaction:t1
-                     -(reverse_MADE:e2)- Card:c1,
-         dom -(reverse_PURCHASER_EMAIL:e3)- Transaction:t2
-             -(reverse_MADE:e4)- Card:c2
-    WHERE c1.card_id < c2.card_id
-    ACCUM INSERT INTO SHARES_EMAIL VALUES (c1, c2, dom.domain);
-  PRINT "build_shares_email done";
+CREATE OR REPLACE QUERY build_shares_email() FOR GRAPH FraudGraph SYNTAX v2 {
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(PURCHASER_EMAIL>)- EmailDomain:d
+                  -(<PURCHASER_EMAIL)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_EMAIL VALUES (c1, c2, d.domain);
+      
+  PRINT X;
 }
 
-CREATE OR REPLACE QUERY build_shares_address(INT max_cards) FOR GRAPH FraudGraph SYNTAX v2 {
-  SetAccum<STRING> @cards_in_region;
-
-  Regions = SELECT r
-            FROM BillingRegion:r -(reverse_BILLED_IN:e)- Transaction:t
-                                 -(reverse_MADE:e2)- Card:c
-            ACCUM r.@cards_in_region += c.card_id;
-
-  Regions = SELECT r FROM Regions:r
-            WHERE r.@cards_in_region.size() >= 2 AND r.@cards_in_region.size() <= max_cards;
-
-  Pairs =
-    SELECT c2
-    FROM Regions:r -(reverse_BILLED_IN:e1)- Transaction:t1
-                   -(reverse_MADE:e2)- Card:c1,
-         r -(reverse_BILLED_IN:e3)- Transaction:t2
-           -(reverse_MADE:e4)- Card:c2
-    WHERE c1.card_id < c2.card_id
-    ACCUM INSERT INTO SHARES_ADDRESS VALUES (c1, c2, r.region_code);
-  PRINT "build_shares_address done";
+CREATE OR REPLACE QUERY build_shares_address() FOR GRAPH FraudGraph SYNTAX v2 {
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(BILLED_IN>)- BillingRegion:r
+                  -(<BILLED_IN)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_ADDRESS VALUES (c1, c2, r.region_code);
+      
+  PRINT X;
 }

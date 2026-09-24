@@ -25,6 +25,14 @@ TYPEDEF TUPLE<claim STRING, source STRING, ref STRING, entity_ids_str STRING> Ev
 
 TYPEDEF TUPLE<action_name STRING, phase STRING, route STRING, reason STRING> ActionTuple
 
+// Query bodies below were exported verbatim from the live TigerGraph Cloud
+// instance (graph FraudGraph) on 2026-09-24, where P1 fixed them directly
+// (all status VALID, not yet installed). Comments are from the repo version.
+// UNREVIEWED DIVERGENCE: the live version drops the evidence_list/action_list
+// params (no Evidence/HAS_EVIDENCE/RECOMMENDS writes; the TYPEDEFs above are now
+// unused) and the automatic SIMILAR_CASE block. graph/mcp/tools.py still sends
+// evidence_list and action_list, so the two must be reconciled before install.
+
 USE GRAPH FraudGraph
 
 CREATE OR REPLACE QUERY write_case_to_graph(
@@ -43,8 +51,6 @@ CREATE OR REPLACE QUERY write_case_to_graph(
   SET<STRING> affected_txn_ids,
   SET<STRING> connected_card_ids,
   SET<STRING> similar_prior_case_ids,
-  LIST<EvidenceTuple> evidence_list,
-  LIST<ActionTuple> action_list,
   SET<STRING> cited_clause_ids
 ) FOR GRAPH FraudGraph SYNTAX v2 {
 
@@ -68,16 +74,6 @@ CREATE OR REPLACE QUERY write_case_to_graph(
     INSERT INTO CASE_INVOLVES_CUSTOMER VALUES (graph_case_id, customer_id_involved);
   END;
 
-  FOREACH ev IN evidence_list DO
-    STRING evidence_id = graph_case_id + "|" + ev.ref;
-    INSERT INTO Evidence VALUES (evidence_id, ev.claim, ev.source, ev.ref, SPLIT(ev.entity_ids_str, "|"));
-    INSERT INTO HAS_EVIDENCE VALUES (graph_case_id, evidence_id);
-  END;
-
-  FOREACH act IN action_list DO
-    INSERT INTO RECOMMENDS VALUES (graph_case_id, act.action_name, act.phase, act.route, act.reason);
-  END;
-
   FOREACH clause_id IN cited_clause_ids DO
     INSERT INTO CITES VALUES (graph_case_id, clause_id);
   END;
@@ -86,20 +82,9 @@ CREATE OR REPLACE QUERY write_case_to_graph(
     INSERT INTO MATCHES VALUES (graph_case_id, pattern);
   END;
 
-  // Case memory (explicit): agent-retrieved similar closed cases
   FOREACH cc_id IN similar_prior_case_ids DO
     INSERT INTO SIMILAR_TO VALUES (graph_case_id, cc_id, 1.0, "retrieved as prior similar case");
     @@similar_to_edges_created += 1;
-  END;
-
-  // Case memory (structural, automatic): other open InvestigationCases that
-  // share a connected card with this one -- the graph finding its own memory.
-  IF connected_card_ids.size() > 0 THEN
-    OtherCases = SELECT oc
-                 FROM InvestigationCase:oc -(reverse_CASE_INVOLVES_CARD:e)- Card:c
-                 WHERE c.card_id IN connected_card_ids AND oc.graph_case_id != graph_case_id;
-    OtherCases = SELECT oc FROM OtherCases:oc
-                 ACCUM INSERT INTO SIMILAR_CASE VALUES (graph_case_id, oc.graph_case_id, 0.7, "shares a connected card");
   END;
 
   PRINT graph_case_id AS graph_case_id, true AS written, @@similar_to_edges_created AS similar_to_edges_created;
