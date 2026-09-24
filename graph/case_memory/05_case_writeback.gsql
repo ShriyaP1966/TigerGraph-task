@@ -62,30 +62,34 @@ CREATE OR REPLACE QUERY write_case_to_graph(
     stop_reason, now(), now()
   );
 
-  FOREACH txn_id IN affected_txn_ids DO
-    INSERT INTO CASE_INVOLVES_TXN VALUES (graph_case_id, txn_id, "affected");
-  END;
+  // Edge targets go through to_vertex_set, which silently drops ids that don't
+  // exist. A plain INSERT with an unknown target id creates a blank vertex:
+  // the agent's synthesized "<customer>-K1" card ids and any non-ClosedCase
+  // similar-case id were leaving empty Card/ClosedCase vertices behind.
+  Txns = to_vertex_set(affected_txn_ids, "Transaction");
+  Txns = SELECT t FROM Txns:t
+         ACCUM INSERT INTO CASE_INVOLVES_TXN VALUES (graph_case_id, t, "affected");
 
-  FOREACH card_id IN connected_card_ids DO
-    INSERT INTO CASE_INVOLVES_CARD VALUES (graph_case_id, card_id);
-  END;
+  Cards = to_vertex_set(connected_card_ids, "Card");
+  Cards = SELECT c FROM Cards:c
+          ACCUM INSERT INTO CASE_INVOLVES_CARD VALUES (graph_case_id, c);
 
   IF customer_id_involved != "" THEN
     INSERT INTO CASE_INVOLVES_CUSTOMER VALUES (graph_case_id, customer_id_involved);
   END;
 
-  FOREACH clause_id IN cited_clause_ids DO
-    INSERT INTO CITES VALUES (graph_case_id, clause_id);
-  END;
+  Clauses = to_vertex_set(cited_clause_ids, "PolicyClause");
+  Clauses = SELECT p FROM Clauses:p
+            ACCUM INSERT INTO CITES VALUES (graph_case_id, p);
 
   IF pattern != "" AND pattern != "none" THEN
     INSERT INTO MATCHES VALUES (graph_case_id, pattern);
   END;
 
-  FOREACH cc_id IN similar_prior_case_ids DO
-    INSERT INTO SIMILAR_TO VALUES (graph_case_id, cc_id, 1.0, "retrieved as prior similar case");
-    @@similar_to_edges_created += 1;
-  END;
+  Similar = to_vertex_set(similar_prior_case_ids, "ClosedCase");
+  Similar = SELECT cc FROM Similar:cc
+            ACCUM INSERT INTO SIMILAR_TO VALUES (graph_case_id, cc, 1.0, "retrieved as prior similar case"),
+                  @@similar_to_edges_created += 1;
 
   PRINT graph_case_id AS graph_case_id, true AS written, @@similar_to_edges_created AS similar_to_edges_created;
 }
