@@ -1,22 +1,17 @@
 {
   "case_id": "HHG-005",
   "case": {
-    "status": "escalated",
-    "verdict": "uncertain",
-    "fraud_probability": 0.362,
-    "pattern": "card_not_present_new_device",
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.642,
+    "pattern": "account_takeover",
     "pattern_description": "",
     "affected_txn_ids": [
       "3523199"
     ],
     "first_suspicious_txn_id": "3523199",
     "connected_card_ids": [],
-    "connected_device_profiles": [
-      "Trident/7.0|Windows 7|ie 11.0 for desktop|1440x900",
-      "Windows|Windows 10|chrome 64.0|1920x1080",
-      "Windows|Windows 7|chrome 64.0|1600x900",
-      "iOS Device|iOS 9.3.5|mobile safari 9.0|1024x768"
-    ],
+    "connected_device_profiles": [],
     "exposure_usd": 100.07,
     "evidence": [
       {
@@ -28,19 +23,19 @@
         ]
       },
       {
-        "claim": "36 transactions in the account's recent window",
+        "claim": "91 transactions in the account's recent window",
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
       },
       {
-        "claim": "1 txns in the last hour totaling $100.07, z-score -0.70",
+        "claim": "1 txns in the last hour totaling $117.07, z-score -0.70",
         "source": "graph",
         "ref": "get_transaction_velocity(1h)",
         "entity_ids": []
       },
       {
-        "claim": "1 txns in the last 48h totaling $100.07, z-score -0.70",
+        "claim": "1 txns in the last 48h totaling $117.07, z-score -0.70",
         "source": "graph",
         "ref": "get_transaction_velocity(48h)",
         "entity_ids": []
@@ -70,22 +65,33 @@
         ]
       },
       {
-        "claim": "Requested step_up_auth: Step-up authentication passed",
+        "claim": "Requested step_up_auth: Step-up authentication failed, likely not the account owner",
         "source": "external",
+        "ref": "simulate_response",
+        "entity_ids": []
+      },
+      {
+        "claim": "Requested customer_validation: Customer states they did not make this purchase and still has the card",
+        "source": "customer",
         "ref": "simulate_response",
         "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008 was reviewed. The activity is consistent with card not present new device (POL-004). Most similar prior case: CC-1389 (similarity 0.4582, outcome cleared). Confidence 0.362 (low risk).",
+    "summary": "Investigation of HHG-005 found pattern=account_takeover with confidence 0.642 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.642) alone would suggest.",
     "written_to_graph": true,
-    "graph_case_id": "LOCAL-HHG-005"
+    "graph_case_id": "CASE-HHG-005"
   },
   "evidence_requests": [
     {
       "type": "step_up_auth",
       "asked_after_step": 1,
-      "assumed_response": "Step-up authentication passed"
+      "assumed_response": "Step-up authentication failed, likely not the account owner"
+    },
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "Customer states they did not make this purchase and still has the card"
     }
   ],
   "next_best_actions": {
@@ -98,12 +104,17 @@
     ],
     "final": [
       {
-        "action": "MONITOR_CARD",
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+        "reason": "R2: customer denial confirms a case"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.432 (actions: ['MONITOR_CARD']). After step_up_auth response ('Step-up authentication passed'), confidence moved to 0.362 (actions: ['MONITOR_CARD'])."
+    "what_changed": "Confidence before additional evidence was 0.432 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.642 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
     "file": false,
@@ -114,7 +125,7 @@
     "activity_dates": []
   },
   "stop_reason": "A simulated verification response settled the question.",
-  "tool_calls": 10,
-  "tokens": 45,
-  "latency_s": 0.2
+  "tool_calls": 11,
+  "tokens": 46,
+  "latency_s": 3.36
 }

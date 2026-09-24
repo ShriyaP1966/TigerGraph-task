@@ -3,115 +3,15 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.7016,
-    "pattern": "card_not_present_new_device",
+    "fraud_probability": 0.5892,
+    "pattern": "account_takeover",
     "pattern_description": "",
     "affected_txn_ids": [
       "3583368"
     ],
     "first_suspicious_txn_id": "3583368",
-    "connected_card_ids": [
-      "C00854-K1",
-      "C01521-K1",
-      "C02079-K1",
-      "C03938-K1",
-      "C04597-K1"
-    ],
-    "connected_device_profiles": [
-      "5012G Build/MRA58K|?|chrome 66.0 for android|?",
-      "5056A Build/MMB29M|?|chrome 63.0 for android|?",
-      "ALE-L23 Build/HuaweiALE-L23|?|chrome 63.0 for android|?",
-      "ALE-L23 Build/HuaweiALE-L23|?|chrome 66.0 for android|?",
-      "BLU ENERGY X PLUS Build/LRX21M|?|chrome 66.0 for android|?",
-      "CRO-L03 Build/HUAWEICRO-L03|?|chrome 52.0 for android|?",
-      "D6603 Build/23.5.A.1.291|?|chrome 66.0 for android|?",
-      "F3313 Build/37.0.A.2.108|?|chrome 65.0 for android|?",
-      "G3313 Build/43.0.A.7.25|?|chrome 66.0 for android|?",
-      "G630-U251|?|chrome|?",
-      "HTC Desire 530 Build/MMB29M|?|chrome 66.0 for android|?",
-      "HTC Desire 626s Build/LMY47O|?|chrome 66.0 for android|?",
-      "HTC Desire 650 Build/MMB29M|?|chrome 66.0 for android|?",
-      "HUAWEI VNS-L53 Build/HUAWEIVNS-L53|?|chrome 66.0 for android|?",
-      "Hisense F20 Build/MMB29M|?|chrome 46.0 for android|?",
-      "Hisense F23 Build/NRD90M|?|chrome 54.0 for android|?",
-      "Hisense U963 Build/MRA58K|?|chrome 66.0 for android|?",
-      "Ilium LT510 Build/MRA58K|?|chrome 63.0 for android|?",
-      "Ilium X510 Build/MRA58K|?|chrome 55.0 for android|?",
-      "LDN-LX3 Build/HUAWEILDN-LX3|?|chrome 66.0 for android|?",
-      "LG-H500 Build/LRX21Y|?|chrome 66.0 for android|?",
-      "LG-H542 Build/MRA58K|?|chrome 61.0 for android|?",
-      "LG-H650 Build/MRA58K|?|chrome 66.0 for android|?",
-      "LG-K430 Build/MRA58K|?|chrome 65.0 for android|?",
-      "LG-K530 Build/MMB29M|?|chrome 66.0 for android|?",
-      "LG-K580 Build/MRA58K|?|chrome 66.0 for android|?",
-      "LG-M700 Build/NMF26X|?|chrome 66.0 for android|?",
-      "LG-X180g Build/LMY47I|?|chrome 46.0 for android|?",
-      "LG-X230 Build/MRA58K|?|chrome 56.0 for android|?",
-      "LGMS550 Build/NRD90U|?|chrome 66.0 for android|?",
-      "Linux x86_64|?|firefox 60.0|?",
-      "MYA-L13 Build/HUAWEIMYA-L13|?|chrome 66.0 for android|?",
-      "Moto C Plus Build/NRD90M.05.034|?|chrome 66.0 for android|?",
-      "Moto E (4) Build/NMA26.42-69|?|chrome 66.0 for android|?",
-      "Moto E (4) Plus Build/NMA26.42-69|?|chrome 66.0 for android|?",
-      "Moto G (4) Build/NPJ25.93-14.7|?|chrome 66.0 for android|?",
-      "Moto G (4) Build/NPJS25.93-14-18|?|chrome 66.0 for android|?",
-      "Moto G (5) Build/NPP25.137-93|?|chrome 66.0 for android|?",
-      "Moto G (5) Plus Build/NPN25.137-92|?|chrome 66.0 for android|?",
-      "Moto Z2 Play Build/NPSS26.118-19-14|?|chrome 66.0 for android|?",
-      "MotoE2(4G-LTE|?|chrome 66.0 for android|?",
-      "PRA-LX3 Build/HUAWEIPRA-LX3|?|chrome 66.0 for android|?",
-      "Redmi Note 3 Build/MMB29M|?|chrome 54.0 for android|?",
-      "SAMSUNG SM-G532M Build/MMB29T|?|samsung browser 4.2|?",
-      "SAMSUNG SM-G570M Build/MMB29K|?|samsung browser 6.4|?",
-      "SAMSUNG SM-G610M Build/MMB29K|?|samsung browser 6.4|?",
-      "SAMSUNG SM-G610M Build/NRD90M|?|samsung browser 6.4|?",
-      "SAMSUNG SM-G920I Build/NRD90M|?|samsung browser 6.4|?",
-      "SAMSUNG SM-G950F Build/R16NW|?|samsung browser 7.0|?",
-      "SAMSUNG SM-J700M Build/MMB29K|?|samsung browser 6.4|?",
-      "SAMSUNG SM-J730GM Build/NRD90M|?|samsung browser 6.4|?",
-      "SAMSUNG-SM-J320A Build/MMB29K|?|chrome 66.0 for android|?",
-      "SM-A520F Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-G531H Build/LMY48B|?|chrome 54.0 for android|?",
-      "SM-G531H Build/LMY48B|?|chrome 65.0 for android|?",
-      "SM-G531H Build/LMY48B|?|chrome 66.0 for android|?",
-      "SM-G532M Build/MMB29T|?|chrome 55.0 for android|?",
-      "SM-G570M Build/MMB29K|?|chrome 66.0 for android|?",
-      "SM-G570M Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-G610F Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-G610M Build/MMB29K|?|chrome 56.0 for android|?",
-      "SM-G610M Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-G955F Build/R16NW|?|chrome 66.0 for android|?",
-      "SM-G955U1 Build/R16NW|?|chrome 66.0 for android|?",
-      "SM-J327T1 Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-J700M Build/LMY48B|?|chrome 66.0 for android|?",
-      "SM-J700M Build/MMB29K|?|chrome 63.0 for android|?",
-      "SM-J700M Build/MMB29K|?|chrome 66.0 for android|?",
-      "SM-J701M Build/NRD90M|?|chrome 63.0 for android|?",
-      "SM-J701M Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-J730GM Build/NRD90M|?|chrome 66.0 for android|?",
-      "SM-N950F Build/NMF26X|?|chrome 66.0 for android|?",
-      "TA-1027 Build/OPR1.170623.026|?|chrome 66.0 for android|?",
-      "TRT-L53 Build/HUAWEITRT-L53|?|chrome 66.0 for android|?",
-      "Techpad|?|chrome 64.0 for android|?",
-      "Techpad|?|chrome 66.0 for android|?",
-      "Trident/7.0|?|ie 11.0 for desktop|?",
-      "WAS-LX3 Build/HUAWEIWAS-LX3|?|chrome 66.0 for android|?",
-      "Windows|?|chrome 64.0|?",
-      "Windows|?|chrome 65.0|?",
-      "Windows|?|chrome 66.0|?",
-      "Windows|?|chrome 67.0|?",
-      "Windows|?|firefox 55.0|?",
-      "Windows|?|firefox 60.0|?",
-      "Windows|?|opera 52.0|?",
-      "XT1053 Build/LPAS23.12-21.7-1|?|chrome 66.0 for android|?",
-      "XT1635-02 Build/NPN26.118-22-2|?|chrome 57.0 for android|?",
-      "XT1635-02 Build/NPN26.118-22-2|?|chrome 66.0 for android|?",
-      "es-us|?|android browser 4.0|?",
-      "iris50|?|chrome 66.0 for android|?",
-      "moto x4 Build/OPW27.57-40|?|chrome 66.0 for android|?",
-      "rv:11.0|?|ie 11.0 for desktop|?",
-      "rv:59.0|?|firefox|?"
-    ],
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
     "exposure_usd": 131.3,
     "evidence": [
       {
@@ -129,38 +29,19 @@
         "entity_ids": []
       },
       {
-        "claim": "Account linked to a 12-member cluster via SHARES_DEVICE, 10 known-fraud members",
-        "source": "graph",
-        "ref": "find_fraud_ring",
-        "entity_ids": [
-          "C00854",
-          "C01521",
-          "C02079",
-          "C03938",
-          "C04597",
-          "C05595",
-          "C06663",
-          "C06744",
-          "C09354",
-          "C09657",
-          "C11509",
-          "C11923"
-        ]
-      },
-      {
-        "claim": "2 txns in the last hour totaling $165.87, z-score 3.74",
+        "claim": "1 txns in the last hour totaling $41.30, z-score 3.74",
         "source": "graph",
         "ref": "get_transaction_velocity(1h)",
         "entity_ids": []
       },
       {
-        "claim": "59 txns in the last 48h totaling $2586.86, z-score 75.29",
+        "claim": "59 txns in the last 48h totaling $2629.90, z-score 75.29",
         "source": "graph",
         "ref": "get_transaction_velocity(48h)",
         "entity_ids": []
       },
       {
-        "claim": "Similar prior case CC-2799 (similarity 0.4185, outcome confirmed_fraud, pattern card_not_present_new_device)",
+        "claim": "Similar prior case CC-2799 (similarity 0.4487, outcome confirmed_fraud, pattern card_not_present_new_device)",
         "source": "graph",
         "ref": "get_prior_similar_cases",
         "entity_ids": [
@@ -168,7 +49,7 @@
         ]
       },
       {
-        "claim": "Similar prior case CC-1056 (similarity 0.3935, outcome confirmed_fraud, pattern card_not_present_new_device)",
+        "claim": "Similar prior case CC-1056 (similarity 0.4218, outcome confirmed_fraud, pattern card_not_present_new_device)",
         "source": "graph",
         "ref": "get_prior_similar_cases",
         "entity_ids": [
@@ -176,7 +57,7 @@
         ]
       },
       {
-        "claim": "Similar prior case CC-3039 (similarity 0.3796, outcome confirmed_fraud, pattern card_not_present_new_device)",
+        "claim": "Similar prior case CC-3039 (similarity 0.4069, outcome confirmed_fraud, pattern card_not_present_new_device)",
         "source": "graph",
         "ref": "get_prior_similar_cases",
         "entity_ids": [
@@ -195,9 +76,9 @@
       "CC-1056",
       "CC-3039"
     ],
-    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009 was reviewed. The activity is consistent with card not present new device (POL-004). The account is linked to a 12-member cluster with 10 known-fraud members. Most similar prior case: CC-2799 (similarity 0.4185, outcome confirmed_fraud). Confidence 0.7016 (medium risk).",
+    "summary": "Investigation of HHG-011 found pattern=account_takeover with confidence 0.5892 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.5892) alone would suggest.",
     "written_to_graph": true,
-    "graph_case_id": "LOCAL-HHG-011"
+    "graph_case_id": "CASE-HHG-011"
   },
   "evidence_requests": [
     {
@@ -209,19 +90,9 @@
   "next_best_actions": {
     "initial": [
       {
-        "action": "CREATE_CASE",
+        "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "R6: shared device/region links this to known fraud"
-      },
-      {
-        "action": "FILE_REPORT",
-        "route": "L2",
-        "reason": "R6: shared origin with confirmed fraud"
-      },
-      {
-        "action": "MONITOR_CONNECTED_CARDS",
-        "route": "auto",
-        "reason": "R6: monitor every card sharing the origin"
+        "reason": "R1: single weak signal, verify before any block"
       }
     ],
     "final": [
@@ -234,41 +105,20 @@
         "action": "CREATE_CASE",
         "route": "auto",
         "reason": "R2: customer denial confirms a case"
-      },
-      {
-        "action": "FILE_REPORT",
-        "route": "L2",
-        "reason": "R2: linked to a shared device/ring fraud cluster"
-      },
-      {
-        "action": "MONITOR_CONNECTED_CARDS",
-        "route": "auto",
-        "reason": "R6: shared origin with known fraud"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.5216 (actions: ['CREATE_CASE', 'FILE_REPORT', 'MONITOR_CONNECTED_CARDS']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.7016 (actions: ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT', 'MONITOR_CONNECTED_CARDS'])."
+    "what_changed": "Confidence before additional evidence was 0.4092 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.5892 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
-    "file": true,
-    "reason": "R2: linked to a shared device/ring fraud cluster",
-    "narrative": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009 was reviewed. The activity is consistent with card not present new device (POL-004). The account is linked to a 12-member cluster with 10 known-fraud members. Most similar prior case: CC-2799 (similarity 0.4185, outcome confirmed_fraud). Confidence 0.7016 (medium risk).",
-    "subjects": [
-      "C11923",
-      "C11923-K2",
-      "C00854-K1",
-      "C01521-K1",
-      "C02079-K1",
-      "C03938-K1",
-      "C04597-K1"
-    ],
-    "total_amount_usd": 131.3,
-    "activity_dates": [
-      "2016-12-29",
-      "2016-12-29"
-    ]
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
   },
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 10,
-  "tokens": 124,
-  "latency_s": 1.32
+  "tokens": 46,
+  "latency_s": 24.81
 }

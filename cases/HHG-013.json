@@ -1,20 +1,18 @@
 {
   "case_id": "HHG-013",
   "case": {
-    "status": "closed_legitimate",
-    "verdict": "legitimate",
-    "fraud_probability": 0.408,
-    "pattern": "card_not_present_new_device",
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.708,
+    "pattern": "account_takeover",
     "pattern_description": "",
-    "affected_txn_ids": [],
-    "first_suspicious_txn_id": "",
-    "connected_card_ids": [],
-    "connected_device_profiles": [
-      "SAMSUNG SM-G950U Build/NRD90M|Android 7.0|samsung browser 6.4|2220x1080",
-      "Trident/7.0|Windows 7|ie 11.0 for desktop|1680x1050",
-      "Windows|?|chrome 66.0|?"
+    "affected_txn_ids": [
+      "3526826"
     ],
-    "exposure_usd": 0.0,
+    "first_suspicious_txn_id": "3526826",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 35.66,
     "evidence": [
       {
         "claim": "Trigger (risk_score): Real-time model scored transaction 3526826 ($35.66, online) at 0.76. Review and decide.",
@@ -31,13 +29,13 @@
         "entity_ids": []
       },
       {
-        "claim": "2 txns in the last hour totaling $79.52, z-score -0.12",
+        "claim": "2 txns in the last hour totaling $1767.90, z-score -0.12",
         "source": "graph",
         "ref": "get_transaction_velocity(1h)",
         "entity_ids": []
       },
       {
-        "claim": "25 txns in the last 48h totaling $2569.43, z-score 29.17",
+        "claim": "22 txns in the last 48h totaling $3377.88, z-score 29.17",
         "source": "graph",
         "ref": "get_transaction_velocity(48h)",
         "entity_ids": []
@@ -67,33 +65,33 @@
         ]
       },
       {
-        "claim": "Requested step_up_auth: Step-up authentication passed",
+        "claim": "Requested step_up_auth: Step-up authentication failed, likely not the account owner",
         "source": "external",
         "ref": "simulate_response",
         "entity_ids": []
       },
       {
-        "claim": "Requested customer_validation: Customer confirms they made this purchase",
+        "claim": "Requested customer_validation: Customer states they did not make this purchase and still has the card",
         "source": "customer",
         "ref": "simulate_response",
         "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "The transaction was flagged by the model with a risk_score of 0.76 (EV-001), yet step-up authentication succeeded (EV-008) and the customer directly confirmed they made the purchase (EV-009). Velocity is low (2 transactions, z-score -0.12, EV-003) and three prior, similar cases were all cleared (EV-005, EV-006, EV-007), resulting in a medium-confidence “card_not_present_new_device” pattern but no corroborating fraud evidence. Accordingly, the fraud probability is below the blocking threshold and the case should be closed with no fraud finding (POL-006). Exposure: $0.0. Verdict set to legitimate by the customer's direct response (R2/R3), overriding what the medium confidence score (0.408) alone would suggest.",
+    "summary": "Investigation of HHG-013 found pattern=account_takeover with confidence 0.708 (medium risk), based on EV-001, EV-002, EV-003, EV-004.",
     "written_to_graph": true,
-    "graph_case_id": "LOCAL-HHG-013"
+    "graph_case_id": "CASE-HHG-013"
   },
   "evidence_requests": [
     {
       "type": "step_up_auth",
       "asked_after_step": 1,
-      "assumed_response": "Step-up authentication passed"
+      "assumed_response": "Step-up authentication failed, likely not the account owner"
     },
     {
       "type": "customer_validation",
       "asked_after_step": 2,
-      "assumed_response": "Customer confirms they made this purchase"
+      "assumed_response": "Customer states they did not make this purchase and still has the card"
     }
   ],
   "next_best_actions": {
@@ -106,12 +104,17 @@
     ],
     "final": [
       {
-        "action": "CLOSE_NO_FRAUD",
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R3: customer confirmed the transaction"
+        "reason": "R2: customer denial confirms a case"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.498 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer confirms they made this purchase'), confidence moved to 0.408 (actions: ['CLOSE_NO_FRAUD'])."
+    "what_changed": "Confidence before additional evidence was 0.498 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.708 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
     "file": false,
@@ -123,6 +126,6 @@
   },
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 11,
-  "tokens": 130,
-  "latency_s": 1.76
+  "tokens": 20,
+  "latency_s": 12.32
 }

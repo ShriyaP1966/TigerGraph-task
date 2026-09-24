@@ -1,23 +1,18 @@
 {
   "case_id": "HHG-010",
   "case": {
-    "status": "closed_legitimate",
-    "verdict": "legitimate",
-    "fraud_probability": 0.45,
-    "pattern": "card_not_present_new_device",
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.35,
+    "pattern": "account_takeover",
     "pattern_description": "",
-    "affected_txn_ids": [],
-    "first_suspicious_txn_id": "",
-    "connected_card_ids": [],
-    "connected_device_profiles": [
-      "MacOS|Mac OS X 10_10_5|chrome 65.0|1280x800",
-      "MacOS|Mac OS X 10_10_5|safari generic|1440x900",
-      "MacOS|Mac OS X 10_13_4|safari generic|1440x900",
-      "Windows|Windows 10|edge 16.0|1366x768",
-      "iOS Device|iOS 11.2.2|mobile safari generic|1334x750",
-      "iOS Device|iOS 11.2.5|mobile safari generic|1136x640"
+    "affected_txn_ids": [
+      "3506725"
     ],
-    "exposure_usd": 0.0,
+    "first_suspicious_txn_id": "3506725",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 1000.03,
     "evidence": [
       {
         "claim": "Trigger (risk_score): Real-time model scored transaction 3506725 ($1,000.03, online) at 0.90. Review and decide.",
@@ -28,19 +23,19 @@
         ]
       },
       {
-        "claim": "16 transactions in the account's recent window",
+        "claim": "34 transactions in the account's recent window",
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
       },
       {
-        "claim": "1 txns in the last hour totaling $1000.03, z-score 3.19",
+        "claim": "1 txns in the last hour totaling $107.96, z-score 3.19",
         "source": "graph",
         "ref": "get_transaction_velocity(1h)",
         "entity_ids": []
       },
       {
-        "claim": "1 txns in the last 48h totaling $1000.03, z-score 3.19",
+        "claim": "1 txns in the last 48h totaling $107.96, z-score 3.19",
         "source": "graph",
         "ref": "get_transaction_velocity(48h)",
         "entity_ids": []
@@ -74,47 +69,36 @@
         "source": "external",
         "ref": "simulate_response",
         "entity_ids": []
-      },
-      {
-        "claim": "Requested customer_validation: Customer confirms they made this purchase",
-        "source": "customer",
-        "ref": "simulate_response",
-        "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "The transaction was flagged by the real-time model with a risk_score of 0.90 (EV-001), yet the step-up authentication succeeded (EV-008) and the customer personally confirmed the purchase (EV-009). The account shows only a single recent transaction with a high z-score (EV-003, EV-004) and the three most similar prior cases were all cleared (EV-005-EV-007), indicating no established fraud pattern. With a medium fraud confidence of 0.45, zero exposure ($0.0), and corroborating verification, the case meets the criteria of POL-006 to **CLOSE_NO_FRAUD**. Verdict set to legitimate by the customer's direct response (R2/R3), overriding what the medium confidence score (0.45) alone would suggest.",
+    "summary": "Investigation of HHG-010 found pattern=account_takeover with confidence 0.35 (low risk), based on EV-001, EV-002, EV-003, EV-004.",
     "written_to_graph": true,
-    "graph_case_id": "LOCAL-HHG-010"
+    "graph_case_id": "CASE-HHG-010"
   },
   "evidence_requests": [
     {
       "type": "step_up_auth",
       "asked_after_step": 1,
       "assumed_response": "Step-up authentication passed"
-    },
-    {
-      "type": "customer_validation",
-      "asked_after_step": 2,
-      "assumed_response": "Customer confirms they made this purchase"
     }
   ],
   "next_best_actions": {
     "initial": [
       {
-        "action": "MONITOR_CARD",
+        "action": "VERIFY_WITH_CUSTOMER",
         "route": "auto",
-        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+        "reason": "R1: single weak signal, verify before any block"
       }
     ],
     "final": [
       {
-        "action": "CLOSE_NO_FRAUD",
+        "action": "ESCALATE_TO_ANALYST",
         "route": "auto",
-        "reason": "R3: customer confirmed the transaction"
+        "reason": "R8: uncertain verdict with exposure over $500"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.54 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer confirms they made this purchase'), confidence moved to 0.45 (actions: ['CLOSE_NO_FRAUD'])."
+    "what_changed": "Confidence before additional evidence was 0.42 (actions: ['VERIFY_WITH_CUSTOMER']). After step_up_auth response ('Step-up authentication passed'), confidence moved to 0.35 (actions: ['ESCALATE_TO_ANALYST'])."
   },
   "sar": {
     "file": false,
@@ -125,7 +109,7 @@
     "activity_dates": []
   },
   "stop_reason": "A simulated verification response settled the question.",
-  "tool_calls": 11,
-  "tokens": 130,
-  "latency_s": 1.95
+  "tool_calls": 10,
+  "tokens": 20,
+  "latency_s": 3.38
 }
