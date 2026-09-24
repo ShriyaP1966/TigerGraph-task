@@ -168,11 +168,21 @@ CREATE OR REPLACE QUERY get_account_subgraph(VERTEX<Card> seed_card, INT txn_lim
 // get_policy_context — substring match over PolicyClause / FraudTypology
 // text. Structured retrieval, not a raw dump: caller supplies a topic
 // keyword (e.g. "card_testing", "shared_device", "sar", "block").
+//
+// Uses instr(), not LIKE - the live-installed version already diverged to
+// instr (LIKE apparently doesn't compile cleanly on this GSQL edition), but
+// its original `instr(...) > 0` check had an off-by-one: instr() is
+// 0-indexed and returns -1 when not found, so a match at the very start of
+// a string (index 0) was being silently excluded by `> 0`. Fixed to `>= 0`.
+// Verified live (2026-09-24): topic="testing" now returns both an old
+// (pre-existing) and a new (POL-*/TYP-*) match; topic="card_testing" (an
+// exact prefix match against the typology_id itself) was the case this
+// missed before the fix.
 // ---------------------------------------------------------------------------
 CREATE OR REPLACE QUERY get_policy_context(STRING topic) FOR GRAPH FraudGraph SYNTAX v2 {
   STRING needle = lower(topic);
-  Clauses = SELECT p FROM PolicyClause:p WHERE lower(p.text) LIKE ("%" + needle + "%") OR lower(p.clause_id) LIKE ("%" + needle + "%");
-  Typologies = SELECT ft FROM FraudTypology:ft WHERE lower(ft.description) LIKE ("%" + needle + "%") OR lower(ft.typology_id) LIKE ("%" + needle + "%");
+  Clauses = SELECT p FROM PolicyClause:p WHERE instr(lower(p.text), needle) >= 0 OR instr(lower(p.clause_id), needle) >= 0;
+  Typologies = SELECT ft FROM FraudTypology:ft WHERE instr(lower(ft.description), needle) >= 0 OR instr(lower(ft.typology_id), needle) >= 0;
   PRINT Clauses;
   PRINT Typologies;
 }

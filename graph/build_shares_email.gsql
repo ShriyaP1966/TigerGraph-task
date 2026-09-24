@@ -1,0 +1,22 @@
+CREATE OR REPLACE QUERY build_shares_email(INT max_cards=30) FOR GRAPH FraudGraph SYNTAX v2 {
+  SetAccum<VERTEX<Card>> @cardsTouching;
+  SetAccum<STRING> @@smallDomains;
+
+  AllDomains = SELECT d
+               FROM EmailDomain:d -(<PURCHASER_EMAIL)- Transaction:t -(<MADE)- Card:c
+               ACCUM d.@cardsTouching += c
+               POST-ACCUM
+                 IF d.@cardsTouching.size() <= max_cards THEN
+                   @@smallDomains += d.domain
+                 END;
+
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(PURCHASER_EMAIL>)- EmailDomain:d
+                  -(<PURCHASER_EMAIL)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2 AND @@smallDomains.contains(d.domain)
+      ACCUM INSERT INTO SHARES_EMAIL VALUES (c1, c2, d.domain);
+
+  PRINT X;
+}
