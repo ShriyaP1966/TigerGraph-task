@@ -41,13 +41,15 @@ logger = logging.getLogger(__name__)
 SHARED_TYPE_TO_EDGE = {"device": "SHARES_DEVICE", "email_domain": "SHARES_EMAIL", "billing_region": "SHARES_ADDRESS"}
 
 
-def _apply_short_timeout(conn, seconds: float = 3.0) -> None:
+def _apply_short_timeout(conn, seconds: float = 30.0) -> None:
     """pyTigerGraph passes timeout=None to requests whenever no GSQL-TIMEOUT header is
     set, which disables any client-side timeout entirely - a genuinely unreachable host
     (as opposed to an actively-refused one) would hang indefinitely rather than fail
     fast. Patches this connection's own session, not the global socket default, so it
     can't affect unrelated calls elsewhere in the process (e.g. live Groq/Gemini calls,
-    which routinely take 10-30s and would break under a global short timeout)."""
+    which routinely take 10-30s and would break under a global short timeout).
+    30s, not 3s: against TigerGraph Cloud a single find_fraud_ring round-trip is
+    ~1.5s and larger rings exceeded 3s, silently falling back to local.)"""
     sess = conn._session
     orig_request = sess.request
 

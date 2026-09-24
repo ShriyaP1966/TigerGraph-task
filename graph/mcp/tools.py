@@ -94,11 +94,15 @@ def get_account_subgraph(
         },
     )
 
+    # The installed query PRINTs seed_card as a bare vertex id string, not a
+    # vertex set, so there are no card attributes here (card_id is known anyway).
     card_v = (
-        result[0].get("seed_card", [{}])[0]
+        result[0].get("seed_card", {})
         if result
         else {}
     )
+    if not isinstance(card_v, dict):
+        card_v = {}
 
     owner_v = (
         (result[1].get("Owner") or [{}])[0]
