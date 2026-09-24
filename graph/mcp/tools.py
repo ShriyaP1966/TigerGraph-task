@@ -681,37 +681,11 @@ def write_case_to_graph(
         f"CASE-{case_id}"
     )
 
-    evidence_list = []
-
-    for evidence in case.get(
-        "evidence",
-        []
-    ):
-
-        evidence_list.append({
-            "claim": evidence.get(
-                "claim",
-                ""
-            ),
-
-            "source": evidence.get(
-                "source",
-                ""
-            ),
-
-            "ref": evidence.get(
-                "ref",
-                ""
-            ),
-
-            "entity_ids_str":
-                "|".join(
-                    evidence.get(
-                        "entity_ids",
-                        []
-                    )
-                ),
-        })
+    # KNOWN GAP (accepted for the 2026-09-24 submission run): the installed
+    # write_case_to_graph query takes no evidence_list / action_list params,
+    # so Evidence, HAS_EVIDENCE and RECOMMENDS are NOT written to the graph.
+    # Evidence and actions still live in the case JSON and local memory.
+    # Actions are still collected below only to extract cited clause IDs.
 
     action_list = []
 
@@ -839,12 +813,6 @@ def write_case_to_graph(
                     "similar_prior_cases",
                     []
                 ),
-
-            "evidence_list":
-                evidence_list,
-
-            "action_list":
-                action_list,
 
             "cited_clause_ids":
                 list(cited_clauses),
