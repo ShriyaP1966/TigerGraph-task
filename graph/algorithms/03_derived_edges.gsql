@@ -49,7 +49,7 @@ CREATE OR REPLACE QUERY build_shares_device() FOR GRAPH FraudGraph SYNTAX v2 {
   PRINT X;
 }
 
-CREATE OR REPLACE QUERY build_shares_email(INT max_cards) FOR GRAPH FraudGraph SYNTAX v2 {
+CREATE OR REPLACE QUERY build_shares_email(INT max_cards=30) FOR GRAPH FraudGraph SYNTAX v2 {
   SetAccum<VERTEX<Card>> @cards;
   SumAccum<INT> @@domains_used;
 
@@ -71,7 +71,7 @@ CREATE OR REPLACE QUERY build_shares_email(INT max_cards) FOR GRAPH FraudGraph S
   PRINT @@domains_used AS domains_used;
 }
 
-CREATE OR REPLACE QUERY build_shares_address(INT max_cards) FOR GRAPH FraudGraph SYNTAX v2 {
+CREATE OR REPLACE QUERY build_shares_address(INT max_cards=60) FOR GRAPH FraudGraph SYNTAX v2 {
   SetAccum<VERTEX<Card>> @cards;
   SumAccum<INT> @@regions_used;
 

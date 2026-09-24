@@ -1,8 +1,8 @@
-"""Fraud Investigation analyst dashboard — Phase 2 (P3).
+"""Fraud Investigation analyst dashboard (P3).
 
-Renders case data shaped like contracts/case_record_schema.json. Reads from
-contracts/case_record_example.json today (see lib/data.py); nothing here
-assumes a live agent, so it runs standalone against the mock contract.
+Renders case data shaped like contracts/case_record_schema.json. Reads the
+real cases/*.json answer files via api.py (see lib/data.py), falling back to
+the mock contract only if no answer files exist yet.
 """
 
 from __future__ import annotations
@@ -32,17 +32,29 @@ if "nav" not in st.session_state:
 if "nav_override" in st.session_state:
     st.session_state.nav = st.session_state.pop("nav_override")
 
+cases = mock_actions.apply_overlay(data.load_cases())
+policy_clauses = data.load_policy_clauses()
+pending_count = sum(
+    1
+    for case in cases
+    for d in case.get("decisions_and_actions") or []
+    if d.get("requires_approval") and d.get("status") in {"recommended", "pending_approval"}
+)
+
 with st.sidebar:
     st.title("Fraud Investigation")
     st.caption("HHGOA — TigerGraph Agentic Fraud Investigation")
-    st.radio("Navigate", ["Case Queue", "Case Detail", "Approvals"], key="nav")
+    nav_labels = {"Approvals": f"Approvals ({pending_count} pending)" if pending_count else "Approvals"}
+    st.radio(
+        "Navigate",
+        ["Case Queue", "Case Detail", "Approvals"],
+        key="nav",
+        format_func=lambda opt: nav_labels.get(opt, opt),
+    )
     st.divider()
     if st.session_state.selected_case_id:
         st.caption(f"Open case: **{st.session_state.selected_case_id}**")
-    st.caption("Phase 2 — built against the mock case-record contract.")
-
-cases = mock_actions.apply_overlay(data.load_cases())
-policy_clauses = data.load_policy_clauses()
+    st.caption(f"{len(cases)} case(s) loaded.")
 
 st.title("Fraud Investigation Dashboard")
 
