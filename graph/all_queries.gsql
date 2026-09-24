@@ -1,0 +1,487 @@
+Using graph 'FraudGraph'
+CREATE OR REPLACE QUERY test_find_fraud_ring_fixed() FOR GRAPH FraudGraph SYNTAX v2 {
+
+    OrAccum<bool> @visited;
+    SumAccum<int> @hop_distance;
+
+    Start = {Card.*};
+
+    Start = SELECT s
+            FROM Start:s
+            WHERE s.card_id == "C06075-K1"
+            ACCUM
+                s.@visited = true,
+                s.@hop_distance = 0;
+
+    Frontier = Start;
+
+    INT hop = 0;
+
+    WHILE Frontier.size() > 0 AND hop < 3 DO
+
+        hop = hop + 1;
+
+        NextDev = SELECT c2
+                  FROM Frontier:c1 - (SHARES_DEVICE>:e) - Card:c2
+                  WHERE c2.@visited == false
+                  POST-ACCUM
+                      c2.@visited = true,
+                      c2.@hop_distance = hop;
+
+        NextEmail = SELECT c2
+                    FROM Frontier:c1 - (SHARES_EMAIL>:e) - Card:c2
+                    WHERE c2.@visited == false
+                    POST-ACCUM
+                      c2.@visited = true,
+                      c2.@hop_distance = hop;
+
+        NextAddr = SELECT c2
+                   FROM Frontier:c1 - (SHARES_ADDRESS>:e) - Card:c2
+                   WHERE c2.@visited == false
+                   POST-ACCUM
+                      c2.@visited = true,
+                      c2.@hop_distance = hop;
+
+        Frontier = NextDev UNION NextEmail UNION NextAddr;
+
+    END;
+
+    Cluster = SELECT c
+              FROM Card:c
+              WHERE c.@visited == true;
+
+    PRINT Cluster;
+}
+
+CREATE OR REPLACE QUERY build_shares_address() FOR GRAPH FraudGraph SYNTAX v2 {
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(BILLED_IN>)- BillingRegion:r
+                  -(<BILLED_IN)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_ADDRESS VALUES (c1, c2, r.region_code);
+      
+  PRINT X;
+}
+
+CREATE OR REPLACE QUERY build_shares_email() FOR GRAPH FraudGraph SYNTAX v2 {
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(PURCHASER_EMAIL>)- EmailDomain:d
+                  -(<PURCHASER_EMAIL)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_EMAIL VALUES (c1, c2, d.domain);
+      
+  PRINT X;
+}
+
+CREATE OR REPLACE QUERY test_any_shared_device() FOR GRAPH FraudGraph SYNTAX v2 {
+
+Shared =
+SELECT c2
+FROM Card:c1 -(SHARES_DEVICE>)- Card:c2;
+
+PRINT Shared;
+}
+
+CREATE OR REPLACE QUERY test_shared_device() FOR GRAPH FraudGraph SYNTAX v2 {
+
+Shared =
+SELECT c2
+FROM Card:c1 -(SHARES_DEVICE>)- Card:c2
+WHERE c1.card_id == "C06075-K1";
+
+PRINT Shared;
+}
+
+CREATE OR REPLACE QUERY test_shortest_path_fixed(
+VERTEX<Card> start_card,
+INT max_hops = 3
+) FOR GRAPH FraudGraph SYNTAX v2 {
+
+OrAccum<bool> @visited;
+SumAccum<int> @distance;
+
+Start = {start_card};
+
+Start = SELECT s
+FROM Start:s
+ACCUM
+s.@visited = true,
+s.@distance = 0;
+
+Frontier = Start;
+
+INT hop = 0;
+
+WHILE Frontier.size() > 0 AND hop < max_hops DO
+hop = hop + 1;
+
+Next = SELECT c2
+       FROM Frontier:c1 -(SHARES_DEVICE>)- Card:c2
+       WHERE c2.@visited == false
+       ACCUM
+         c2.@visited = true,
+         c2.@distance = hop;
+
+Frontier = Next;
+
+END;
+
+Result = SELECT c
+FROM Card:c
+WHERE c.@visited == true;
+
+PRINT Result;
+}
+
+CREATE OR REPLACE QUERY test_card_device() FOR GRAPH FraudGraph SYNTAX v2 {
+
+Devices =
+SELECT d
+FROM Card:c -(MADE>)- Transaction:t -(FROM_DEVICE>)- DeviceProfile:d
+WHERE c.card_id == "C06075-K1";
+
+PRINT Devices;
+}
+
+CREATE OR REPLACE QUERY get_prior_similar_cases(VERTEX<Card> seed_card, STRING pattern_filter, INT top_k=5) FOR GRAPH FraudGraph SYNTAX v2 {
+  SetAccum<STRING> @@candidate_case_ids;
+  Start = {seed_card};
+
+  Direct = SELECT cc FROM Start -(<ON_CARD)- ClosedCase:cc;
+  Direct = SELECT cc FROM Direct:cc ACCUM @@candidate_case_ids += cc.case_id;
+
+  LinkedDev = SELECT c2 FROM Start -(SHARES_DEVICE>)- Card:c2;
+  LinkedEmail = SELECT c2 FROM Start -(SHARES_EMAIL>)- Card:c2;
+  LinkedAddr = SELECT c2 FROM Start -(SHARES_ADDRESS>)- Card:c2;
+  Linked = LinkedDev UNION LinkedEmail UNION LinkedAddr;
+
+  LinkedCases = SELECT cc FROM Linked:c2 -(<ON_CARD)- ClosedCase:cc;
+  LinkedCases = SELECT cc FROM LinkedCases:cc ACCUM @@candidate_case_ids += cc.case_id;
+
+  Result = SELECT cc FROM ClosedCase:cc
+           WHERE cc.case_id IN @@candidate_case_ids
+             AND (pattern_filter == "" OR cc.pattern == pattern_filter)
+           LIMIT top_k;
+
+  PRINT Result;
+}
+
+CREATE OR REPLACE QUERY find_fraud_ring(VERTEX<Card> seed_card, INT max_hops=3) FOR GRAPH FraudGraph {
+  OrAccum<bool> @visited;
+  SumAccum<int> @hop_distance;
+  MapAccum<STRING, SetAccum<STRING>> @@shared_groups;
+
+  Start = {seed_card};
+  Start = SELECT s FROM Start:s ACCUM s.@visited = true, s.@hop_distance = 0;
+  Frontier = Start;
+  INT hop = 0;
+
+  WHILE Frontier.size() > 0 AND hop < max_hops DO
+    hop = hop + 1;
+
+    NextDev = SELECT c2
+              FROM Frontier:c1 -(SHARES_DEVICE:e)- Card:c2
+              WHERE c2.@visited == false
+              ACCUM
+                @@shared_groups += ("device:" + e.device_id -> c1.card_id),
+                @@shared_groups += ("device:" + e.device_id -> c2.card_id)
+              POST-ACCUM c2.@visited = true, c2.@hop_distance = hop;
+
+    NextEmail = SELECT c2
+              FROM Frontier:c1 -(SHARES_EMAIL:e)- Card:c2
+              WHERE c2.@visited == false
+              ACCUM
+                @@shared_groups += ("email_domain:" + e.domain -> c1.card_id),
+                @@shared_groups += ("email_domain:" + e.domain -> c2.card_id)
+              POST-ACCUM c2.@visited = true, c2.@hop_distance = hop;
+
+    NextAddr = SELECT c2
+              FROM Frontier:c1 -(SHARES_ADDRESS:e)- Card:c2
+              WHERE c2.@visited == false
+              ACCUM
+                @@shared_groups += ("billing_region:" + e.region_code -> c1.card_id),
+                @@shared_groups += ("billing_region:" + e.region_code -> c2.card_id)
+              POST-ACCUM c2.@visited = true, c2.@hop_distance = hop;
+
+    Frontier = NextDev UNION NextEmail UNION NextAddr;
+  END;
+
+  PRINT Frontier[Frontier.card_id, Frontier.customer_id, Frontier.@hop_distance];
+  PRINT @@shared_groups AS shared_attributes;
+}
+
+CREATE OR REPLACE QUERY get_account_subgraph(VERTEX<Card> seed_card, INT txn_limit=100) FOR GRAPH FraudGraph SYNTAX v2 {
+  Start = {seed_card};
+
+  Owner = SELECT cu FROM Start -(<OWNS)- Customer:cu;
+  RecentTxns = SELECT t FROM Start -(MADE>)- Transaction:t
+               ORDER BY t.ts DESC
+               LIMIT txn_limit;
+  DeviceLinks = SELECT c2 FROM Start -(SHARES_DEVICE>)- Card:c2;
+  EmailLinks = SELECT c2 FROM Start -(SHARES_EMAIL>)- Card:c2;
+  AddressLinks = SELECT c2 FROM Start -(SHARES_ADDRESS>)- Card:c2;
+
+  PRINT seed_card;
+  PRINT Owner;
+  PRINT RecentTxns;
+  PRINT DeviceLinks, EmailLinks, AddressLinks;
+}
+
+CREATE OR REPLACE QUERY get_transaction_velocity(VERTEX<Card> seed_card, INT window_minutes,
+                                                   STRING reference_txn_id, DOUBLE amount_threshold=-1) FOR GRAPH FraudGraph SYNTAX v2 {
+  SumAccum<int> @@txn_count;
+  SumAccum<double> @@txn_sum;
+  SumAccum<int> @@small_txn_count;
+  ListAccum<STRING> @@txn_ids;
+  MaxAccum<DATETIME> @@ref_ts;
+  Start = {seed_card};
+
+  AllTxns = SELECT t FROM Start -(MADE>)- Transaction:t;
+
+  IF reference_txn_id != "" THEN
+    RefSet = SELECT t FROM AllTxns:t WHERE t.txn_id == reference_txn_id
+             ACCUM @@ref_ts += t.ts;
+  ELSE
+    AllWithTs = SELECT t FROM AllTxns:t ACCUM @@ref_ts += t.ts;
+  END;
+
+  Window = SELECT t FROM AllTxns:t
+           WHERE datetime_diff(@@ref_ts, t.ts) >= 0 AND datetime_diff(@@ref_ts, t.ts) <= window_minutes * 60
+           ACCUM
+             @@txn_count += 1,
+             @@txn_sum += t.amount,
+             @@txn_ids += t.txn_id,
+             IF amount_threshold >= 0 AND t.amount <= amount_threshold THEN
+               @@small_txn_count += 1
+             END;
+
+  PRINT @@txn_count AS txn_count, @@txn_sum AS txn_sum, @@small_txn_count AS small_txn_count, @@txn_ids AS txn_ids;
+}
+
+CREATE OR REPLACE QUERY write_case_to_graph(
+  STRING graph_case_id,
+  STRING case_pack_id,
+  STRING status,
+  STRING verdict,
+  DOUBLE fraud_probability,
+  STRING pattern,
+  STRING pattern_description,
+  DOUBLE exposure_usd,
+  STRING first_suspicious_txn_id,
+  STRING summary,
+  STRING stop_reason,
+  STRING customer_id_involved,
+  SET<STRING> affected_txn_ids,
+  SET<STRING> connected_card_ids,
+  SET<STRING> similar_prior_case_ids,
+  SET<STRING> cited_clause_ids
+) FOR GRAPH FraudGraph SYNTAX v2 {
+
+  SumAccum<int> @@similar_to_edges_created;
+
+  INSERT INTO InvestigationCase VALUES (
+    graph_case_id, case_pack_id, status, verdict, fraud_probability, pattern,
+    pattern_description, exposure_usd, first_suspicious_txn_id, summary,
+    stop_reason, now(), now()
+  );
+
+  FOREACH txn_id IN affected_txn_ids DO
+    INSERT INTO CASE_INVOLVES_TXN VALUES (graph_case_id, txn_id, "affected");
+  END;
+
+  FOREACH card_id IN connected_card_ids DO
+    INSERT INTO CASE_INVOLVES_CARD VALUES (graph_case_id, card_id);
+  END;
+
+  IF customer_id_involved != "" THEN
+    INSERT INTO CASE_INVOLVES_CUSTOMER VALUES (graph_case_id, customer_id_involved);
+  END;
+
+  FOREACH clause_id IN cited_clause_ids DO
+    INSERT INTO CITES VALUES (graph_case_id, clause_id);
+  END;
+
+  IF pattern != "" AND pattern != "none" THEN
+    INSERT INTO MATCHES VALUES (graph_case_id, pattern);
+  END;
+
+  FOREACH cc_id IN similar_prior_case_ids DO
+    INSERT INTO SIMILAR_TO VALUES (graph_case_id, cc_id, 1.0, "retrieved as prior similar case");
+    @@similar_to_edges_created += 1;
+  END;
+
+  PRINT graph_case_id AS graph_case_id, true AS written, @@similar_to_edges_created AS similar_to_edges_created;
+}
+
+# draft
+CREATE OR REPLACE QUERY test_shortest_path() FOR GRAPH FraudGraph SYNTAX v2 {
+
+    OrAccum<bool> @visited;
+
+    Start = {Card.*};
+
+    Start = SELECT s
+            FROM Start:s
+            WHERE s.card_id == "C06075-K1"
+            ACCUM s.@visited = true;
+
+    Connected = SELECT c2
+                FROM Start:c1 - (SHARES_DEVICE:e) - Card:c2
+                WHERE c2.@visited == false
+                ACCUM c2.@visited = true;
+
+    PRINT Connected;
+}
+
+CREATE OR REPLACE QUERY build_shares_device_test() FOR GRAPH FraudGraph SYNTAX v2 {
+  Seed = SELECT c FROM Card:c LIMIT 100;
+  X = SELECT c2
+      FROM Seed:c1 -(MADE>)- Transaction:t1
+                  -(FROM_DEVICE>)- DeviceProfile:d
+                  -(<FROM_DEVICE)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_DEVICE VALUES (c1, c2, d.device_id);
+  PRINT X.size();
+}
+
+CREATE OR REPLACE QUERY test_shortest_path_c06075() FOR GRAPH FraudGraph SYNTAX v2 {
+OrAccum<bool> @visited;
+SumAccum<int> @distance;
+
+Start = {Card.*};
+
+Start = SELECT s
+FROM Start:s
+WHERE s.card_id == "C06075-K1"
+ACCUM
+s.@visited = true,
+s.@distance = 0;
+
+Frontier = Start;
+INT hop = 0;
+
+WHILE Frontier.size() > 0 AND hop < 3 DO
+hop = hop + 1;
+
+Next = SELECT c2
+FROM Frontier:c1 -(SHARES_DEVICE>)- Card:c2
+WHERE c2.@visited == false
+ACCUM
+  c2.@visited = true,
+  c2.@distance = hop;
+
+Frontier = Next;
+
+END;
+
+Result = SELECT c
+FROM Card:c
+WHERE c.@visited == true;
+
+PRINT Result;
+}
+
+CREATE OR REPLACE QUERY shortest_path_between_cards(VERTEX<Card> card_a, VERTEX<Card> card_b, INT max_hops=6) FOR GRAPH FraudGraph {
+  OrAccum<bool> @visited;
+  MapAccum<VERTEX, VERTEX> @@parent;
+  OrAccum<bool> @@found;
+
+  Start = {card_a};
+  Start = SELECT s FROM Start:s ACCUM s.@visited = true;
+  Frontier = Start;
+  INT hop = 0;
+
+  WHILE Frontier.size() > 0 AND hop < max_hops AND @@found == false DO
+    hop = hop + 1;
+
+    NextDev = SELECT c2
+              FROM Frontier:c1 -(SHARES_DEVICE:e)- Card:c2
+              WHERE c2.@visited == false
+              ACCUM @@parent += (c2 -> c1)
+              POST-ACCUM c2.@visited = true,
+                         IF c2 == card_b THEN @@found += true END;
+
+    NextEmail = SELECT c2
+              FROM Frontier:c1 -(SHARES_EMAIL:e)- Card:c2
+              WHERE c2.@visited == false
+              ACCUM @@parent += (c2 -> c1)
+              POST-ACCUM c2.@visited = true,
+                         IF c2 == card_b THEN @@found += true END;
+
+    NextAddr = SELECT c2
+              FROM Frontier:c1 -(SHARES_ADDRESS:e)- Card:c2
+              WHERE c2.@visited == false
+              ACCUM @@parent += (c2 -> c1)
+              POST-ACCUM c2.@visited = true,
+                         IF c2 == card_b THEN @@found += true END;
+
+    Frontier = NextDev UNION NextEmail UNION NextAddr;
+  END;
+
+  IF @@found THEN
+    PRINT true AS found;
+    PRINT @@parent AS parent_map;
+  ELSE
+    PRINT false AS found;
+  END;
+}
+
+CREATE OR REPLACE QUERY test_transaction_velocity() FOR GRAPH FraudGraph SYNTAX v2 {
+
+    SumAccum<int> @@txn_count;
+    SumAccum<double> @@txn_sum;
+    SumAccum<int> @@small_txn_count;
+    ListAccum<STRING> @@txn_ids;
+
+    AllTxns = SELECT t
+              FROM Card:c - (MADE>:e) - Transaction:t
+              WHERE c.card_id == "C06075-K1";
+
+    Window = SELECT t
+             FROM AllTxns:t
+             WHERE datetime_diff(
+                       to_datetime("2016-07-06 15:15:16"),
+                       t.ts
+                   ) >= 0
+               AND datetime_diff(
+                       to_datetime("2016-07-06 15:15:16"),
+                       t.ts
+                   ) <= 60 * 60
+             ACCUM
+                 @@txn_count += 1,
+                 @@txn_sum += t.amount,
+                 @@txn_ids += t.txn_id,
+                 CASE WHEN t.amount <= 20 THEN
+                     @@small_txn_count += 1
+                 END;
+
+    PRINT @@txn_count AS txn_count;
+    PRINT @@txn_sum AS txn_sum;
+    PRINT @@small_txn_count AS small_txn_count;
+    PRINT @@txn_ids AS txn_ids;
+}
+
+CREATE OR REPLACE QUERY get_policy_context(STRING topic) FOR GRAPH FraudGraph SYNTAX v2 {
+  STRING needle = lower(topic);
+  Clauses = SELECT p FROM PolicyClause:p WHERE lower(p.text) LIKE ("%" + needle + "%") OR lower(p.clause_id) LIKE ("%" + needle + "%");
+  Typologies = SELECT ft FROM FraudTypology:ft WHERE lower(ft.description) LIKE ("%" + needle + "%") OR lower(ft.typology_id) LIKE ("%" + needle + "%");
+  PRINT Clauses;
+  PRINT Typologies;
+}
+
+CREATE OR REPLACE QUERY build_shares_device() FOR GRAPH FraudGraph SYNTAX v2 {
+  X = SELECT c2
+      FROM Card:c1 -(MADE>)- Transaction:t1
+                  -(FROM_DEVICE>)- DeviceProfile:d
+                  -(<FROM_DEVICE)- Transaction:t2
+                  -(<MADE)- Card:c2
+      WHERE c1 != c2
+      ACCUM INSERT INTO SHARES_DEVICE VALUES (c1, c2, d.device_id);
+      
+  PRINT X;
+}

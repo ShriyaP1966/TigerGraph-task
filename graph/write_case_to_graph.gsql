@@ -1,0 +1,54 @@
+CREATE OR REPLACE QUERY write_case_to_graph(
+  STRING graph_case_id,
+  STRING case_pack_id,
+  STRING status,
+  STRING verdict,
+  DOUBLE fraud_probability,
+  STRING pattern,
+  STRING pattern_description,
+  DOUBLE exposure_usd,
+  STRING first_suspicious_txn_id,
+  STRING summary,
+  STRING stop_reason,
+  STRING customer_id_involved,
+  SET<STRING> affected_txn_ids,
+  SET<STRING> connected_card_ids,
+  SET<STRING> similar_prior_case_ids,
+  SET<STRING> cited_clause_ids
+) FOR GRAPH FraudGraph SYNTAX v2 {
+
+  SumAccum<int> @@similar_to_edges_created;
+
+  INSERT INTO InvestigationCase VALUES (
+    graph_case_id, case_pack_id, status, verdict, fraud_probability, pattern,
+    pattern_description, exposure_usd, first_suspicious_txn_id, summary,
+    stop_reason, now(), now()
+  );
+
+  FOREACH txn_id IN affected_txn_ids DO
+    INSERT INTO CASE_INVOLVES_TXN VALUES (graph_case_id, txn_id, "affected");
+  END;
+
+  FOREACH card_id IN connected_card_ids DO
+    INSERT INTO CASE_INVOLVES_CARD VALUES (graph_case_id, card_id);
+  END;
+
+  IF customer_id_involved != "" THEN
+    INSERT INTO CASE_INVOLVES_CUSTOMER VALUES (graph_case_id, customer_id_involved);
+  END;
+
+  FOREACH clause_id IN cited_clause_ids DO
+    INSERT INTO CITES VALUES (graph_case_id, clause_id);
+  END;
+
+  IF pattern != "" AND pattern != "none" THEN
+    INSERT INTO MATCHES VALUES (graph_case_id, pattern);
+  END;
+
+  FOREACH cc_id IN similar_prior_case_ids DO
+    INSERT INTO SIMILAR_TO VALUES (graph_case_id, cc_id, 1.0, "retrieved as prior similar case");
+    @@similar_to_edges_created += 1;
+  END;
+
+  PRINT graph_case_id AS graph_case_id, true AS written, @@similar_to_edges_created AS similar_to_edges_created;
+}

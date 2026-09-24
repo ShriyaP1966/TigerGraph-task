@@ -1,0 +1,22 @@
+CREATE OR REPLACE QUERY get_prior_similar_cases(VERTEX<Card> seed_card, STRING pattern_filter, INT top_k=5) FOR GRAPH FraudGraph SYNTAX v2 {
+  SetAccum<STRING> @@candidate_case_ids;
+  Start = {seed_card};
+
+  Direct = SELECT cc FROM Start -(<ON_CARD)- ClosedCase:cc;
+  Direct = SELECT cc FROM Direct:cc ACCUM @@candidate_case_ids += cc.case_id;
+
+  LinkedDev = SELECT c2 FROM Start -(SHARES_DEVICE>)- Card:c2;
+  LinkedEmail = SELECT c2 FROM Start -(SHARES_EMAIL>)- Card:c2;
+  LinkedAddr = SELECT c2 FROM Start -(SHARES_ADDRESS>)- Card:c2;
+  Linked = LinkedDev UNION LinkedEmail UNION LinkedAddr;
+
+  LinkedCases = SELECT cc FROM Linked:c2 -(<ON_CARD)- ClosedCase:cc;
+  LinkedCases = SELECT cc FROM LinkedCases:cc ACCUM @@candidate_case_ids += cc.case_id;
+
+  Result = SELECT cc FROM ClosedCase:cc
+           WHERE cc.case_id IN @@candidate_case_ids
+             AND (pattern_filter == "" OR cc.pattern == pattern_filter)
+           LIMIT top_k;
+
+  PRINT Result;
+}
