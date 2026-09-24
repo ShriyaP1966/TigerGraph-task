@@ -113,7 +113,13 @@ class TigerGraphBackend(GraphBackend):
             if self._p1 is None:
                 raise RuntimeError("P1 tools not importable")
             card = self._resolve_card_id(account_id, as_of, card_id)
-            r = self._p1.get_account_subgraph(card, txn_limit=300, include_shared_links=True)
+            # P1's query has no as_of filter and returns the card's most RECENT txns, so a
+            # small limit both leaked post-case transactions and dropped the flagged one
+            # (HHG-018). Over-fetch, cut at as_of here, then keep the latest 300.
+            r = self._p1.get_account_subgraph(card, txn_limit=5000, include_shared_links=True)
+            if as_of:
+                r["transactions"] = [t for t in r["transactions"] if t["ts"] <= as_of]
+            r["transactions"] = sorted(r["transactions"], key=lambda t: t["ts"], reverse=True)[:300]
 
             txns = [
                 TxnSummary(
