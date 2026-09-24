@@ -1,0 +1,5 @@
+{
+  "ACCT-RING-1": {"ring_id": "RING-1", "size": 2, "members": ["ACCT-RING-1", "ACCT-RING-2"], "known_fraud_count": 1, "shared_via": ["SHARES_DEVICE", "SHARES_EMAIL"]},
+  "ACCT-RING-2": {"ring_id": "RING-1", "size": 2, "members": ["ACCT-RING-1", "ACCT-RING-2"], "known_fraud_count": 1, "shared_via": ["SHARES_DEVICE", "SHARES_EMAIL"]},
+  "ACCT-CLEAN-1": {"ring_id": "", "size": 1, "members": ["ACCT-CLEAN-1"], "known_fraud_count": 0, "shared_via": []}
+}

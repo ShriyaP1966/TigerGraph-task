@@ -1,0 +1,44 @@
+{
+  "input": null,
+  "output": {
+    "$defs": {
+      "Typology": {
+        "properties": {
+          "typology_id": {
+            "title": "Typology Id",
+            "type": "string"
+          },
+          "name": {
+            "title": "Name",
+            "type": "string"
+          },
+          "indicators": {
+            "title": "Indicators",
+            "type": "string"
+          }
+        },
+        "required": [
+          "typology_id",
+          "name",
+          "indicators"
+        ],
+        "title": "Typology",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "typologies": {
+        "items": {
+          "$ref": "#/$defs/Typology"
+        },
+        "title": "Typologies",
+        "type": "array"
+      }
+    },
+    "required": [
+      "typologies"
+    ],
+    "title": "TypologiesOutput",
+    "type": "object"
+  }
+}

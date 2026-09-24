@@ -1,0 +1,51 @@
+{
+  "input": {
+    "properties": {
+      "topic": {
+        "title": "Topic",
+        "type": "string"
+      }
+    },
+    "required": [
+      "topic"
+    ],
+    "title": "PolicyContextInput",
+    "type": "object"
+  },
+  "output": {
+    "$defs": {
+      "PolicyClause": {
+        "properties": {
+          "clause_id": {
+            "title": "Clause Id",
+            "type": "string"
+          },
+          "text": {
+            "title": "Text",
+            "type": "string"
+          }
+        },
+        "required": [
+          "clause_id",
+          "text"
+        ],
+        "title": "PolicyClause",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "clauses": {
+        "items": {
+          "$ref": "#/$defs/PolicyClause"
+        },
+        "title": "Clauses",
+        "type": "array"
+      }
+    },
+    "required": [
+      "clauses"
+    ],
+    "title": "PolicyContextOutput",
+    "type": "object"
+  }
+}

@@ -1,0 +1,112 @@
+{
+  "case_id": "HHG-002",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.297,
+    "pattern": "none",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478782"
+    ],
+    "first_suspicious_txn_id": "3478782",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "MotoE2(4G-LTE|?|chrome generic|?",
+      "SM-G531H Build/LMY48B|?|chrome 63.0 for android|?",
+      "Trident/7.0|?|ie 11.0 for desktop|?",
+      "Trident/7.0|?|ie 11.0 for tablet|?",
+      "Windows|?|chrome 55.0|?",
+      "Windows|?|chrome 63.0|?",
+      "Windows|?|chrome 64.0|?",
+      "Windows|?|firefox 58.0|?"
+    ],
+    "exposure_usd": 292.36,
+    "evidence": [
+      {
+        "claim": "Trigger (risk_score): Real-time model scored transaction 3478782 ($292.36, online) at 0.79. Review and decide.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3478782"
+        ]
+      },
+      {
+        "claim": "29 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last hour totaling $292.36, z-score 4.89",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last 48h totaling $292.36, z-score 4.89",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-0393 (similarity 0.3826, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-0393"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-0628 (similarity 0.3179, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-0628"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1142 (similarity 0.3047, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1142"
+        ]
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007 was reviewed. Most similar prior case: CC-0393 (similarity 0.3826, outcome cleared). Confidence 0.297 (low risk).",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-002"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "final": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
+  "tool_calls": 9,
+  "tokens": 29,
+  "latency_s": 0.25
+}

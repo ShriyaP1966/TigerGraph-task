@@ -1,0 +1,132 @@
+{
+  "case_id": "HHG-012",
+  "case": {
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.39,
+    "pattern": "out_of_region_use",
+    "pattern_description": "",
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "?|Android|chrome 66.0|1280x720",
+      "?|Linux|chrome 66.0|2560x1440",
+      "Windows|Windows 10|chrome 65.0|1366x768",
+      "Windows|Windows 10|chrome 65.0|1920x1080",
+      "Windows|Windows 7|chrome 66.0|1366x768",
+      "iOS Device|iOS 11.2.6|mobile safari generic|2208x1242",
+      "iOS Device|iOS 11.3.0|mobile safari generic|2001x1125"
+    ],
+    "exposure_usd": 0.0,
+    "evidence": [
+      {
+        "claim": "Trigger (risk_score): Real-time model scored transaction 3553342 ($30.91, in billing region 494.0) at 0.55. Review and decide.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3553342"
+        ]
+      },
+      {
+        "claim": "300 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "2 txns in the last hour totaling $52.89, z-score -0.25",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "13 txns in the last 48h totaling $684.85, z-score 7.76",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-5077 (similarity 0.5754, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-5077"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1267 (similarity 0.3789, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1267"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-0910 (similarity 0.3519, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-0910"
+        ]
+      },
+      {
+        "claim": "Requested step_up_auth: Step-up authentication passed",
+        "source": "external",
+        "ref": "simulate_response",
+        "entity_ids": []
+      },
+      {
+        "claim": "Requested customer_validation: Customer confirms they made this purchase",
+        "source": "customer",
+        "ref": "simulate_response",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "The transaction received a moderate risk score of 0.55 (EV-001) but the step-up authentication was successful (EV-008) and the customer directly confirmed they made the purchase (EV-009). Prior similar cases (EV-005, EV-006, EV-007) were all cleared, the confidence in fraud is low (0.39), and the exposure is $0.0, indicating minimal fraud probability. Accordingly, the case should be closed with no fraud finding (POL-006). Verdict set to legitimate by the customer's direct response (R2/R3), overriding what the low confidence score (0.39) alone would suggest.",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-012"
+  },
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 1,
+      "assumed_response": "Step-up authentication passed"
+    },
+    {
+      "type": "customer_validation",
+      "asked_after_step": 2,
+      "assumed_response": "Customer confirms they made this purchase"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+      }
+    ],
+    "final": [
+      {
+        "action": "CLOSE_NO_FRAUD",
+        "route": "auto",
+        "reason": "R3: customer confirmed the transaction"
+      }
+    ],
+    "what_changed": "Confidence before additional evidence was 0.48 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer confirms they made this purchase'), confidence moved to 0.39 (actions: ['CLOSE_NO_FRAUD'])."
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A simulated verification response settled the question.",
+  "tool_calls": 11,
+  "tokens": 107,
+  "latency_s": 9.54
+}

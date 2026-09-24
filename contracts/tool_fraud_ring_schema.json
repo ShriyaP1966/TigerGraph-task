@@ -1,0 +1,78 @@
+{
+  "input": {
+    "properties": {
+      "account_id": {
+        "title": "Account Id",
+        "type": "string"
+      },
+      "as_of": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "As Of"
+      },
+      "card_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Card Id"
+      }
+    },
+    "required": [
+      "account_id"
+    ],
+    "title": "FraudRingInput",
+    "type": "object"
+  },
+  "output": {
+    "properties": {
+      "ring_id": {
+        "title": "Ring Id",
+        "type": "string"
+      },
+      "size": {
+        "title": "Size",
+        "type": "integer"
+      },
+      "members": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Members",
+        "type": "array"
+      },
+      "known_fraud_count": {
+        "title": "Known Fraud Count",
+        "type": "integer"
+      },
+      "shared_via": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Shared Via",
+        "type": "array"
+      }
+    },
+    "required": [
+      "ring_id",
+      "size",
+      "members",
+      "known_fraud_count",
+      "shared_via"
+    ],
+    "title": "FraudRingOutput",
+    "type": "object"
+  }
+}

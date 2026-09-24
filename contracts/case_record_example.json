@@ -1,0 +1,212 @@
+[
+  {
+    "case_id": "CASE-000001",
+    "created_at": "2026-09-22T04:12:00Z",
+    "updated_at": "2026-09-22T04:19:00Z",
+    "status": "pending_approval",
+    "trigger": {
+      "type": "risk_score",
+      "source_id": "TXN-8841207",
+      "timestamp": "2026-09-22T04:10:00Z",
+      "details": "Bank fraud model returned risk_score=0.91 on a $2,340 card-not-present transaction."
+    },
+    "entities": {
+      "customer_id": "CUST-55219",
+      "account_ids": ["ACCT-10293"],
+      "transaction_ids": ["TXN-8841207", "TXN-8841190", "TXN-8841166"],
+      "device_ids": ["DEV-44710"]
+    },
+    "investigation_record": {
+      "entities_examined": ["ACCT-10293", "DEV-44710", "CUST-55219"],
+      "evidence_gathered": [
+        {
+          "evidence_id": "E1",
+          "type": "graph_pattern",
+          "description": "DEV-44710 is shared with ACCT-77410, which was confirmed fraud in CASE-000042 (card testing, 2026-06-11).",
+          "source_tool": "find_fraud_ring",
+          "timestamp": "2026-09-22T04:13:10Z"
+        },
+        {
+          "evidence_id": "E2",
+          "type": "transaction_history",
+          "description": "3 transactions on ACCT-10293 within 6 minutes, ascending amounts ($12, $88, $2,340) — classic card-testing velocity pattern.",
+          "source_tool": "get_transaction_velocity",
+          "timestamp": "2026-09-22T04:13:40Z"
+        },
+        {
+          "evidence_id": "E3",
+          "type": "prior_case",
+          "description": "CASE-000042 closed as confirmed fraud, same typology, similarity_score=0.87.",
+          "source_tool": "get_prior_similar_cases",
+          "timestamp": "2026-09-22T04:14:05Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "F1",
+          "description": "Device-sharing with a confirmed fraud account plus an ascending-amount velocity pattern strongly matches the 'card testing' typology.",
+          "supporting_evidence": ["E1", "E2", "E3"]
+        }
+      ],
+      "fraud_pattern_identified": "TYP-003",
+      "risk_assessment": {
+        "confidence_score": 0.86,
+        "confidence_breakdown": {
+          "bank_risk_score": 0.91,
+          "typology_match_strength": 0.85,
+          "similarity_to_confirmed_fraud": 0.87,
+          "evidence_coverage_ratio": 0.75
+        },
+        "risk_level": "high",
+        "rationale": "Three independent evidence sources agree; confidence clears the 0.75 act threshold without needing more evidence."
+      }
+    },
+    "decisions_and_actions": [
+      {
+        "decision_id": "D1",
+        "decision": "High confidence card-testing pattern with a shared-device link to confirmed prior fraud; block the transaction and hold the account for analyst review.",
+        "action": "block_transaction",
+        "requires_approval": true,
+        "approval_route": "fraud_analyst",
+        "status": "pending_approval",
+        "actor": "agent",
+        "timestamp": "2026-09-22T04:19:00Z"
+      }
+    ],
+    "additional_evidence_requests": [],
+    "next_best_action": {
+      "before_additional_evidence": {
+        "action": "block_transaction",
+        "approval_route": "fraud_analyst",
+        "rationale": "Confidence already above the acting threshold from graph + velocity + prior-case evidence alone; no additional evidence needed."
+      },
+      "after_additional_evidence": {
+        "action": "block_transaction",
+        "approval_route": "fraud_analyst",
+        "rationale": "Unchanged — no additional evidence was requested for this case."
+      }
+    },
+    "sar": {
+      "filed": true,
+      "content": "Suspicious card-testing pattern detected on ACCT-10293, linked via shared device DEV-44710 to confirmed fraud case CASE-000042. Three transactions in 6 minutes with ascending amounts. Recommend blocking and account review.",
+      "policy_clause_ids": ["POL-004"]
+    },
+    "explanation": "Case opened on a risk_score trigger (E-none, bank model). Evidence E1-E3 independently point to card testing (TYP-003): a shared-device link to a confirmed-fraud account (E1), an ascending-amount velocity burst (E2), and high similarity to a closed fraud case (E3). Combined confidence 0.86 clears the act threshold, so no further evidence was requested. Recommended action is block_transaction per POL-004, routed to a fraud analyst for approval before execution.",
+    "case_memory": {
+      "stored": true,
+      "similar_prior_cases_used": [
+        { "case_id": "CASE-000042", "similarity_score": 0.87, "outcome": "confirmed_fraud" }
+      ]
+    }
+  },
+  {
+    "case_id": "CASE-000002",
+    "created_at": "2026-09-22T05:02:00Z",
+    "updated_at": "2026-09-22T05:41:00Z",
+    "status": "closed_cleared",
+    "trigger": {
+      "type": "customer_report",
+      "source_id": "RPT-3390",
+      "timestamp": "2026-09-22T05:00:00Z",
+      "details": "Customer reported not recognizing a $410 transaction."
+    },
+    "entities": {
+      "customer_id": "CUST-88213",
+      "account_ids": ["ACCT-51290"],
+      "transaction_ids": ["TXN-9012551"],
+      "device_ids": ["DEV-90112"]
+    },
+    "investigation_record": {
+      "entities_examined": ["ACCT-51290", "DEV-90112"],
+      "evidence_gathered": [
+        {
+          "evidence_id": "E1",
+          "type": "transaction_history",
+          "description": "No unusual velocity; account has 14 months of similar-sized transactions with the same merchant category.",
+          "source_tool": "get_transaction_velocity",
+          "timestamp": "2026-09-22T05:03:00Z"
+        },
+        {
+          "evidence_id": "E2",
+          "type": "graph_pattern",
+          "description": "DEV-90112 is not shared with any other account; no fraud-ring signal.",
+          "source_tool": "find_fraud_ring",
+          "timestamp": "2026-09-22T05:03:30Z"
+        }
+      ],
+      "findings": [
+        {
+          "finding_id": "F1",
+          "description": "No graph or velocity signal supports fraud; confidence too low to act on customer report alone.",
+          "supporting_evidence": ["E1", "E2"]
+        }
+      ],
+      "fraud_pattern_identified": null,
+      "risk_assessment": {
+        "confidence_score": 0.38,
+        "confidence_breakdown": {
+          "bank_risk_score": 0.22,
+          "typology_match_strength": 0.0,
+          "similarity_to_confirmed_fraud": 0.1,
+          "evidence_coverage_ratio": 0.5
+        },
+        "risk_level": "medium",
+        "rationale": "Below the 0.75 act threshold and above the 0.40 monitor-only floor — genuinely ambiguous, so more evidence was requested from the account owner."
+      }
+    },
+    "decisions_and_actions": [
+      {
+        "decision_id": "D1",
+        "decision": "Ambiguous signal; ask the account owner to validate the transaction before deciding.",
+        "action": "request_more_evidence",
+        "requires_approval": false,
+        "approval_route": "auto",
+        "status": "executed",
+        "actor": "agent",
+        "timestamp": "2026-09-22T05:04:00Z"
+      },
+      {
+        "decision_id": "D2",
+        "decision": "Customer confirmed the transaction was their own (forgotten recurring charge); close the case.",
+        "action": "close_case",
+        "requires_approval": false,
+        "approval_route": "auto",
+        "status": "executed",
+        "actor": "agent",
+        "timestamp": "2026-09-22T05:41:00Z"
+      }
+    ],
+    "additional_evidence_requests": [
+      {
+        "request_id": "R1",
+        "requested_at": "before_initial_assessment",
+        "type": "account_owner_validation",
+        "reason": "No graph or velocity signal supports the customer's fraud report; need the customer to confirm or deny recognition of the transaction before acting.",
+        "status": "received",
+        "result": "Customer confirmed the transaction was a recurring charge they forgot about."
+      }
+    ],
+    "next_best_action": {
+      "before_additional_evidence": {
+        "action": "request_more_evidence",
+        "approval_route": "auto",
+        "rationale": "Confidence 0.38 is too ambiguous to allow or block outright; ask the account owner to validate first."
+      },
+      "after_additional_evidence": {
+        "action": "close_case",
+        "approval_route": "auto",
+        "rationale": "Account owner validation resolved the ambiguity; no fraud indicated, safe to auto-close."
+      }
+    },
+    "sar": {
+      "filed": false,
+      "content": null,
+      "policy_clause_ids": []
+    },
+    "explanation": "Case opened on a customer report. Evidence E1-E2 found no velocity or device-sharing signal (confidence 0.38, ambiguous). Per POL-007 the agent requested account-owner validation (R1) rather than acting on an inconclusive signal. The customer confirmed the charge was their own recurring payment, so the case was closed with no action and no SAR.",
+    "case_memory": {
+      "stored": true,
+      "similar_prior_cases_used": []
+    }
+  }
+]

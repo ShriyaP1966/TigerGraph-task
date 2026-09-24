@@ -1,0 +1,14 @@
+pandas
+pyarrow
+networkx
+pydantic>=2
+langgraph
+python-dotenv
+groq
+google-generativeai
+fastapi
+uvicorn
+scikit-learn
+pytest
+pyyaml
+jsonschema

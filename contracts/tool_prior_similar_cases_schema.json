@@ -1,0 +1,78 @@
+{
+  "input": {
+    "properties": {
+      "case_text": {
+        "title": "Case Text",
+        "type": "string"
+      },
+      "k": {
+        "default": 5,
+        "title": "K",
+        "type": "integer"
+      },
+      "as_of": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "As Of"
+      }
+    },
+    "required": [
+      "case_text"
+    ],
+    "title": "PriorSimilarCasesInput",
+    "type": "object"
+  },
+  "output": {
+    "$defs": {
+      "SimilarCase": {
+        "properties": {
+          "case_id": {
+            "title": "Case Id",
+            "type": "string"
+          },
+          "similarity": {
+            "title": "Similarity",
+            "type": "number"
+          },
+          "outcome": {
+            "title": "Outcome",
+            "type": "string"
+          },
+          "pattern": {
+            "title": "Pattern",
+            "type": "string"
+          }
+        },
+        "required": [
+          "case_id",
+          "similarity",
+          "outcome",
+          "pattern"
+        ],
+        "title": "SimilarCase",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "results": {
+        "items": {
+          "$ref": "#/$defs/SimilarCase"
+        },
+        "title": "Results",
+        "type": "array"
+      }
+    },
+    "required": [
+      "results"
+    ],
+    "title": "PriorSimilarCasesOutput",
+    "type": "object"
+  }
+}

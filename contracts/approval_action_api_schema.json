@@ -1,0 +1,62 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "approval_action_api_schema.json",
+  "title": "Approval Action API",
+  "description": "PROPOSED contract, drafted by P3, not yet confirmed by P2. This is what the analyst dashboard (P3) needs to call once a human clicks Approve/Reject on a pending decision in a case's decisions_and_actions[] list (contracts/case_record_schema.json). Today the UI implements this locally as a mock (ui/lib/mock_actions.py, backed by a JSON file) so the approval workflow can be built and demoed before the real agent exists. Swapping the mock for the real endpoint should only require changing ui/lib/mock_actions.record_decision() to call this API instead of writing to the local ledger — no other UI code should need to change, which is why the request/response shapes below mirror decisions_and_actions[] item fields directly. P2: please confirm or amend this before P3 wires it up in Phase 3.",
+  "definitions": {
+    "review_request": {
+      "type": "object",
+      "description": "POST /cases/{case_id}/decisions/{decision_id}/review — body",
+      "required": ["status", "actor"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["approved", "rejected"],
+          "description": "The human's decision. Matches decisions_and_actions[].status in case_record_schema.json."
+        },
+        "actor": {
+          "type": "string",
+          "description": "Who approved/rejected it, e.g. an analyst's name or login. Written to decisions_and_actions[].actor."
+        },
+        "note": {
+          "type": ["string", "null"],
+          "description": "Optional free-text reason from the analyst, e.g. why an action was rejected. Not in case_record_schema.json today — P2 may want to fold this into decisions_and_actions[].decision on rejection, or drop it if unneeded."
+        }
+      }
+    },
+    "review_response": {
+      "type": "object",
+      "description": "200 OK body — the updated decision, so the UI can render the result without a second read.",
+      "required": ["case_id", "decision_id", "status", "actor", "timestamp"],
+      "properties": {
+        "case_id": { "type": "string" },
+        "decision_id": { "type": "string" },
+        "status": { "type": "string", "enum": ["approved", "rejected", "executed"], "description": "'executed' if the backend also carries out an auto-executable action immediately after approval, rather than leaving it at 'approved'." },
+        "actor": { "type": "string" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "execution_result": {
+          "type": ["string", "null"],
+          "description": "Optional: what happened when an approved action was executed (e.g. 'card blocked, reissue queued'), if the backend executes synchronously. Null if execution is async or not applicable (e.g. a rejection)."
+        }
+      }
+    },
+    "error_response": {
+      "type": "object",
+      "description": "4xx/5xx body.",
+      "required": ["error"],
+      "properties": {
+        "error": { "type": "string", "description": "Human-readable reason, e.g. 'decision already resolved' or 'decision not found'." }
+      }
+    }
+  },
+  "endpoints": {
+    "review_decision": {
+      "method": "POST",
+      "path": "/cases/{case_id}/decisions/{decision_id}/review",
+      "request_body": { "$ref": "#/definitions/review_request" },
+      "success_response": { "$ref": "#/definitions/review_response" },
+      "error_response": { "$ref": "#/definitions/error_response" },
+      "notes": "Idempotency: calling this twice on an already-resolved decision should return a 409-style error_response rather than silently overwriting a prior approve/reject, so two analysts can't race each other. The mock implementation (ui/lib/mock_actions.py) does not currently enforce this — P2's real endpoint should."
+    }
+  }
+}

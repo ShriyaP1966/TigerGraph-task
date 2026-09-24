@@ -1,0 +1,82 @@
+{
+  "input": {
+    "properties": {
+      "account_id": {
+        "title": "Account Id",
+        "type": "string"
+      },
+      "window_hours": {
+        "title": "Window Hours",
+        "type": "number"
+      },
+      "as_of": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "As Of"
+      },
+      "card_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Card Id"
+      }
+    },
+    "required": [
+      "account_id",
+      "window_hours"
+    ],
+    "title": "TransactionVelocityInput",
+    "type": "object"
+  },
+  "output": {
+    "properties": {
+      "count": {
+        "title": "Count",
+        "type": "integer"
+      },
+      "sum_amount": {
+        "title": "Sum Amount",
+        "type": "number"
+      },
+      "max_amount": {
+        "title": "Max Amount",
+        "type": "number"
+      },
+      "z_score": {
+        "title": "Z Score",
+        "type": "number"
+      },
+      "baseline_mean": {
+        "title": "Baseline Mean",
+        "type": "number"
+      },
+      "baseline_std": {
+        "title": "Baseline Std",
+        "type": "number"
+      }
+    },
+    "required": [
+      "count",
+      "sum_amount",
+      "max_amount",
+      "z_score",
+      "baseline_mean",
+      "baseline_std"
+    ],
+    "title": "TransactionVelocityOutput",
+    "type": "object"
+  }
+}

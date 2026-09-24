@@ -1,0 +1,28 @@
+# scoring weights, must sum to 1.0
+confidence_weights:
+  bank_risk: 0.30
+  typology_match: 0.30
+  similarity_to_fraud: 0.25
+  evidence_coverage: 0.15
+
+confidence_thresholds:
+  act: 0.75
+  gather_more: 0.40 # between gather_more and act -> gather more evidence / escalate
+  # below gather_more -> monitor/close
+
+agent:
+  max_evidence_loops: 2
+  similarity_threshold: 0.75 # for SIMILAR_TO links in case memory
+
+graph:
+  device_min_fields: 2 # need at least this many non-null fields to form a device key
+  # DeviceInfo/id_30/id_31/id_33 are OS+browser+screen, not a true device id - "Windows|Windows
+  # 10|chrome 63.0|1920x1080" is a common laptop config lots of unrelated people share by chance.
+  # max_shared_degree has to be tight enough to exclude those and only keep near-unique fingerprints.
+  max_shared_degree: 8 # skip a device/email value as a linking edge if more than this many accounts share it
+  address_max_shared_degree: 3 # addr1 is a coarse billing region code, noisier than device/email - stricter cap
+  case_window_days: 90 # how far back to pull a customer's txn history for a case
+  case_max_txns: 300 # hard cap per account subgraph even inside the window
+  ring_window_days: 3 # a shared device/email/address only counts as a link if both accounts
+  # used it within this many days of each other - otherwise a coarse value shared over 6 months
+  # of data blows the ring up to almost everyone

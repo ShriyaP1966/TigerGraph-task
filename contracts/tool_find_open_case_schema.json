@@ -1,0 +1,40 @@
+{
+  "input": {
+    "properties": {
+      "entity_id": {
+        "title": "Entity Id",
+        "type": "string"
+      }
+    },
+    "required": [
+      "entity_id"
+    ],
+    "title": "FindOpenCaseInput",
+    "type": "object"
+  },
+  "output": {
+    "properties": {
+      "found": {
+        "title": "Found",
+        "type": "boolean"
+      },
+      "case_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Case Id"
+      }
+    },
+    "required": [
+      "found"
+    ],
+    "title": "FindOpenCaseOutput",
+    "type": "object"
+  }
+}

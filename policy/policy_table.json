@@ -1,0 +1,16 @@
+{
+  "ALLOW_TRANSACTION": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "DECLINE_TRANSACTION": {"route": "L1", "auto_executable": false, "approver": "team_lead", "amount_threshold": null},
+  "MONITOR_CARD": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "MONITOR_CONNECTED_CARDS": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "WARN_CUSTOMER": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "VERIFY_WITH_CUSTOMER": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "STEP_UP_AUTH": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "BLOCK_CARD": {"route": "conditional", "auto_executable": false, "approver": "team_lead_or_fraud_manager", "amount_threshold": 2500, "note": "L1 at/under threshold, L2 above - see policy/gate.py:resolve_route"},
+  "BLOCK_ALL_CARDS": {"route": "L2", "auto_executable": false, "approver": "fraud_manager", "amount_threshold": null},
+  "GENERATE_REPORT": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "CREATE_CASE": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "FILE_REPORT": {"route": "L2", "auto_executable": false, "approver": "fraud_manager", "amount_threshold": null},
+  "ESCALATE_TO_ANALYST": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null},
+  "CLOSE_NO_FRAUD": {"route": "auto", "auto_executable": true, "approver": null, "amount_threshold": null}
+}

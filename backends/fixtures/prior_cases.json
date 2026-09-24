@@ -1,0 +1,5 @@
+[
+  {"case_id": "CC-0141", "text": "three tiny online authorizations then a larger purchase, device shared with another card, confirmed fraud", "outcome": "confirmed_fraud", "pattern": "card_testing"},
+  {"case_id": "CC-2671", "text": "card present purchases in a new billing region while home activity continued, confirmed fraud", "outcome": "confirmed_fraud", "pattern": "out_of_region_use"},
+  {"case_id": "CC-0500", "text": "customer disputed a recurring monthly charge that matched their own history, cleared", "outcome": "cleared", "pattern": "none"}
+]

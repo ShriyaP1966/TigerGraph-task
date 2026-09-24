@@ -1,0 +1,44 @@
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# Environment / secrets
+.env
+.env.*
+!.env.example
+**/secrets.toml
+
+# Streamlit
+.streamlit/
+
+# OS / editor
+.DS_Store
+Thumbs.db
+.vscode/
+
+# Incomplete browser downloads
+*.crdownload
+
+# Generated / scratch
+*.log
+_preview_*.png
+
+# Large raw source docs (keep chunks, not necessarily the raw PDFs, out of git)
+docs/policy/raw/*
+!docs/policy/raw/.gitkeep
+!docs/policy/raw/README.md
+
+# UI mock action API state (local audit ledger for the approval workflow demo)
+ui/.local/
+
+# Large transaction data
+data/processed/transactions_clean.csv
+data/*.csv
+data/*.parquet
+
+# Case memory vector index cache, sqlite ledger
+memory/.cache/
+*.sqlite3

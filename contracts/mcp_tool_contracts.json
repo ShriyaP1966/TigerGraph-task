@@ -1,0 +1,126 @@
+{
+  "_meta": {
+    "owner": "P1",
+    "status": "CONTRACT FINAL — implementations landing today, shapes below are locked",
+    "backend_today": "local TigerGraph Community Edition (Docker) — connection details will move to Savanna cloud once signup completes; only host/token change, tool names and shapes below do not",
+    "protocol": "tigergraph-mcp (github.com/tigergraph/tigergraph-mcp) exposing these as callable MCP tools against graph `FraudGraph`",
+    "notes": "All IDs are dataset-native strings (TransactionID as string, card_id like 'C01234-K1', customer_id like 'C01234', case_id). No invented IDs."
+  },
+  "tools": [
+    {
+      "name": "get_account_subgraph",
+      "description": "Full local context for one card: the card, its owner, its transactions (most recent first, capped), the devices/email domains/billing regions those transactions touch, and any cards directly linked via shared device/email/region edges.",
+      "input": {
+        "card_id": "string, required, e.g. 'C01234-K1'",
+        "txn_limit": "int, optional, default 100 — max transactions to return, most recent first",
+        "include_shared_links": "bool, optional, default true"
+      },
+      "output": {
+        "card": { "card_id": "string", "customer_id": "string", "network": "string", "card_type": "string" },
+        "customer": { "customer_id": "string" },
+        "transactions": [
+          {
+            "txn_id": "string", "ts": "string ISO8601", "amount": "number", "product_cd": "string",
+            "channel": "string", "risk_score": "number", "addr1": "string", "addr2": "string",
+            "p_email_domain": "string", "r_email_domain": "string", "device_id": "string or null"
+          }
+        ],
+        "shared_links": [
+          { "linked_card_id": "string", "link_type": "SHARES_DEVICE|SHARES_EMAIL|SHARES_ADDRESS", "shared_value": "string" }
+        ]
+      }
+    },
+    {
+      "name": "find_fraud_ring",
+      "description": "Runs weakly-connected-components over the SHARES_DEVICE/SHARES_EMAIL/SHARES_ADDRESS backbone starting from a card, returns the connected cluster of cards plus which shared attributes tie them together.",
+      "input": {
+        "card_id": "string, required",
+        "max_hops": "int, optional, default 3",
+        "min_shared_weight": "number, optional, default 1 — filters weak single-signal links"
+      },
+      "output": {
+        "cluster_id": "string",
+        "cards": [ { "card_id": "string", "customer_id": "string", "hop_distance": "int" } ],
+        "shared_attributes": [
+          { "type": "device|email_domain|billing_region", "value": "string", "card_ids": ["string"] }
+        ],
+        "cluster_size": "int"
+      }
+    },
+    {
+      "name": "get_transaction_velocity",
+      "description": "Count and sum of transactions on a card within a rolling time window ending at a reference transaction (or now), for card-testing / burst detection.",
+      "input": {
+        "card_id": "string, required",
+        "window_minutes": "int, required, e.g. 60",
+        "reference_txn_id": "string, optional — window ends at this txn's ts; defaults to latest txn on the card",
+        "amount_threshold": "number, optional — if set, also returns count of txns below this amount (for card-testing's 'tiny authorizations' signal)"
+      },
+      "output": {
+        "card_id": "string",
+        "window_minutes": "int",
+        "txn_count": "int",
+        "txn_sum": "number",
+        "small_txn_count": "int or null",
+        "txn_ids": ["string"]
+      }
+    },
+    {
+      "name": "get_prior_similar_cases",
+      "description": "Retrieves closed cases (ClosedCase vertices, our labeled memory) most similar to a given card/pattern, via shared device/region/email overlap first (structural), then embedding similarity over case narratives (semantic) as a fallback/re-rank.",
+      "input": {
+        "card_id": "string, optional",
+        "device_id": "string, optional",
+        "pattern": "string, optional — one of the five known patterns, or 'undocumented'",
+        "query_text": "string, optional — free text for embedding similarity (e.g. a draft evidence summary)",
+        "top_k": "int, optional, default 5"
+      },
+      "output": {
+        "similar_cases": [
+          {
+            "case_id": "string", "outcome": "confirmed_fraud|cleared", "pattern": "string",
+            "exposure_usd": "number", "analyst_notes": "string",
+            "match_reason": "string — e.g. 'shared device profile' or 'embedding similarity 0.87'",
+            "similarity_score": "number 0-1"
+          }
+        ]
+      }
+    },
+    {
+      "name": "get_policy_context",
+      "description": "Structured retrieval of fraud policy rules and typology descriptions relevant to a topic, for citation in explanations (not a raw text dump).",
+      "input": {
+        "topic": "string, required — e.g. 'card_testing', 'shared_device', 'sar_threshold', 'block_approval'"
+      },
+      "output": {
+        "policy_clauses": [ { "clause_id": "string e.g. R5", "text": "string" } ],
+        "typologies": [ { "typology_id": "string", "description": "string" } ]
+      }
+    },
+    {
+      "name": "shortest_path_between_cards",
+      "description": "Shortest path between two cards over the shared-device/email/region backbone, for 'how are these two suspicious accounts connected' questions.",
+      "input": { "card_id_a": "string, required", "card_id_b": "string, required", "max_hops": "int, optional, default 6" },
+      "output": {
+        "found": "bool",
+        "path": [ { "card_id": "string" } ],
+        "link_types": ["SHARES_DEVICE|SHARES_EMAIL|SHARES_ADDRESS"]
+      }
+    },
+    {
+      "name": "write_case_to_graph",
+      "description": "Case write-back / case-memory job. Upserts an InvestigationCase vertex with all evidence/policy/typology/action edges, and computes SIMILAR_TO edges to related past cases (both ClosedCase and other InvestigationCase). This is the call that satisfies 'each case also written into the graph.'",
+      "input": {
+        "case_id": "string, required (the HHG-xxx case_pack id)",
+        "case": "object — the full `case` part of the answer-file schema (status, verdict, fraud_probability, pattern, pattern_description, affected_txn_ids, first_suspicious_txn_id, connected_card_ids, connected_device_profiles, exposure_usd, evidence[], similar_prior_cases[], summary)",
+        "next_best_actions": "object — {initial: [...], final: [...], what_changed}",
+        "sar": "object or null"
+      },
+      "output": {
+        "graph_case_id": "string — vertex ID created, e.g. 'CASE-2016-XXXX'",
+        "written": "bool",
+        "similar_to_edges_created": "int"
+      }
+    }
+  ]
+}

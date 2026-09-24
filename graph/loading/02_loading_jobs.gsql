@@ -1,0 +1,110 @@
+// ============================================================================
+// Loading jobs — load data/processed/*.csv into FraudGraph.
+// Run after 01_schema.gsql. Order matters: dimension tables before
+// Transaction (which references them), Transaction before ClosedCase/
+// derived edges.
+//
+// Usage: gsql -g FraudGraph graph/loading/02_loading_jobs.gsql
+// Then trigger with: RUN LOADING JOB load_all USING
+//   customers_file="data/processed/customers.csv", ... (see graph/README.md)
+// ============================================================================
+
+USE GRAPH FraudGraph
+
+CREATE LOADING JOB load_customers FOR GRAPH FraudGraph {
+  DEFINE FILENAME customers_file;
+  DEFINE HEADER hdr_customers = "customer_id";
+  LOAD customers_file TO VERTEX Customer VALUES ($"customer_id") USING header="true", user_defined_header="hdr_customers", separator=",";
+}
+
+CREATE LOADING JOB load_cards FOR GRAPH FraudGraph {
+  DEFINE FILENAME cards_file;
+  DEFINE HEADER hdr_cards = "card_id", "customer_id", "card1", "card2", "card3", "network", "card5", "card_type";
+  LOAD cards_file TO VERTEX Card
+    VALUES ($"card_id", $"customer_id", $"card1", $"card2", $"card3", $"network", $"card5", $"card_type")
+    USING header="true", user_defined_header="hdr_cards", separator=",";
+  LOAD cards_file TO EDGE OWNS VALUES ($"customer_id", $"card_id") USING header="true", user_defined_header="hdr_cards", separator=",";
+}
+
+CREATE LOADING JOB load_device_profiles FOR GRAPH FraudGraph {
+  DEFINE FILENAME devices_file;
+  DEFINE HEADER hdr_devices = "device_id", "device_info", "os", "browser", "screen", "device_type";
+  LOAD devices_file TO VERTEX DeviceProfile
+    VALUES ($"device_id", $"device_info", $"os", $"browser", $"screen", $"device_type")
+    USING header="true", user_defined_header="hdr_devices", separator=",";
+}
+
+CREATE LOADING JOB load_email_domains FOR GRAPH FraudGraph {
+  DEFINE FILENAME emails_file;
+  DEFINE HEADER hdr_emails = "domain";
+  LOAD emails_file TO VERTEX EmailDomain VALUES ($"domain") USING header="true", user_defined_header="hdr_emails", separator=",";
+}
+
+CREATE LOADING JOB load_billing_regions FOR GRAPH FraudGraph {
+  DEFINE FILENAME regions_file;
+  DEFINE HEADER hdr_regions = "region_code", "country_code";
+  LOAD regions_file TO VERTEX BillingRegion VALUES ($"region_code", $"country_code") USING header="true", user_defined_header="hdr_regions", separator=",";
+}
+
+CREATE LOADING JOB load_transactions FOR GRAPH FraudGraph {
+  DEFINE FILENAME txns_file;
+  DEFINE HEADER hdr_txns = "txn_id", "card_id", "customer_id", "transaction_dt", "amount", "product_cd", "addr1", "addr2", "dist1", "dist2", "p_email_domain", "r_email_domain", "c1", "c2", "c3", "c4", "c5", "c6", "c7", "c8", "c9", "c10", "c11", "c12", "c13", "c14", "d1", "d2", "d3", "d4", "d5", "d6", "d7", "d8", "d9", "d10", "d11", "d12", "d13", "d14", "d15", "m1", "m2", "m3", "m4", "m5", "m6", "m7", "m8", "m9", "ts", "channel", "risk_score", "id_01", "id_02", "id_03", "id_04", "id_05", "id_06", "id_07", "id_08", "id_09", "id_10", "id_11", "device_new", "proxy_rating", "os", "browser", "screen", "match_status", "device_type", "device_info", "device_id";
+  LOAD txns_file TO VERTEX Transaction
+    VALUES ($"txn_id", $"transaction_dt", $"amount", $"product_cd", $"addr1", $"addr2",
+            $"dist1", $"dist2", $"p_email_domain", $"r_email_domain",
+            $"c1", $"c2", $"c3", $"c4", $"c5", $"c6", $"c7", $"c8", $"c9", $"c10", $"c11", $"c12", $"c13", $"c14",
+            $"d1", $"d2", $"d3", $"d4", $"d5", $"d6", $"d7", $"d8", $"d9", $"d10", $"d11", $"d12", $"d13", $"d14", $"d15",
+            $"m1", $"m2", $"m3", $"m4", $"m5", $"m6", $"m7", $"m8", $"m9",
+            $"ts", $"channel", $"risk_score",
+            $"id_01", $"id_02", $"id_03", $"id_04", $"id_05", $"id_06", $"id_07", $"id_08", $"id_09", $"id_10", $"id_11",
+            $"device_new", $"proxy_rating", $"os", $"browser", $"screen", $"match_status",
+            $"device_type", $"device_info")
+    USING header="true", user_defined_header="hdr_txns", separator=",";
+
+  LOAD txns_file TO EDGE MADE VALUES ($"card_id", $"txn_id") USING header="true", user_defined_header="hdr_txns", separator=",";
+  LOAD txns_file TO EDGE FROM_DEVICE VALUES ($"txn_id", $"device_id") WHERE $"device_id" != "" USING header="true", user_defined_header="hdr_txns", separator=",";
+  LOAD txns_file TO EDGE PURCHASER_EMAIL VALUES ($"txn_id", $"p_email_domain") WHERE $"p_email_domain" != "" USING header="true", user_defined_header="hdr_txns", separator=",";
+  LOAD txns_file TO EDGE RECIPIENT_EMAIL VALUES ($"txn_id", $"r_email_domain") WHERE $"r_email_domain" != "" USING header="true", user_defined_header="hdr_txns", separator=",";
+  LOAD txns_file TO EDGE BILLED_IN VALUES ($"txn_id", $"addr1") WHERE $"addr1" != "" USING header="true", user_defined_header="hdr_txns", separator=",";
+}
+
+CREATE LOADING JOB load_closed_cases FOR GRAPH FraudGraph {
+  DEFINE FILENAME closed_cases_file;
+  DEFINE HEADER hdr_closed_cases = "case_id", "customer_id", "card_id", "opened_at", "closed_at", "outcome", "pattern", "first_fraud_txn_id", "txn_ids", "n_txns", "exposure_usd", "connected_card_ids", "actions_taken", "report_filed", "analyst_notes";
+  // report_filed is "Yes"/"No" in the CSV, which the BOOL parser does not
+  // accept, so map it explicitly with two filtered LOADs.
+  LOAD closed_cases_file TO VERTEX ClosedCase
+    VALUES ($"case_id", $"customer_id", $"card_id", $"opened_at", $"closed_at", $"outcome",
+            $"pattern", $"first_fraud_txn_id",
+            SPLIT($"txn_ids", "|"), $"n_txns", $"exposure_usd",
+            SPLIT($"connected_card_ids", "|"), $"actions_taken", "true", $"analyst_notes")
+    WHERE $"report_filed" == "Yes"
+    USING header="true", user_defined_header="hdr_closed_cases", separator=",", quote="double";
+  LOAD closed_cases_file TO VERTEX ClosedCase
+    VALUES ($"case_id", $"customer_id", $"card_id", $"opened_at", $"closed_at", $"outcome",
+            $"pattern", $"first_fraud_txn_id",
+            SPLIT($"txn_ids", "|"), $"n_txns", $"exposure_usd",
+            SPLIT($"connected_card_ids", "|"), $"actions_taken", "false", $"analyst_notes")
+    WHERE $"report_filed" != "Yes"
+    USING header="true", user_defined_header="hdr_closed_cases", separator=",", quote="double";
+  LOAD closed_cases_file TO EDGE ON_CARD VALUES ($"case_id", $"card_id") USING header="true", user_defined_header="hdr_closed_cases", separator=",", quote="double";
+  // One edge per pipe-separated id: flatten into temp tables first.
+  LOAD closed_cases_file TO TEMP_TABLE cc_txns (case_id, txn_id)
+    VALUES ($"case_id", flatten($"txn_ids", "|", 1)) USING header="true", user_defined_header="hdr_closed_cases", separator=",", quote="double";
+  LOAD TEMP_TABLE cc_txns TO EDGE INVOLVES_TXN VALUES ($"case_id", $"txn_id", "fraud_episode");
+  LOAD closed_cases_file TO TEMP_TABLE cc_cards (case_id, card_id)
+    VALUES ($"case_id", flatten($"connected_card_ids", "|", 1)) USING header="true", user_defined_header="hdr_closed_cases", separator=",", quote="double";
+  LOAD TEMP_TABLE cc_cards TO EDGE CONNECTED_TO VALUES ($"case_id", $"card_id") WHERE $"card_id" != "";
+}
+
+CREATE LOADING JOB load_policy_typology_action FOR GRAPH FraudGraph {
+  DEFINE FILENAME policy_file;
+  DEFINE HEADER hdr_policy = "clause_id", "text";
+  DEFINE FILENAME typology_file;
+  DEFINE HEADER hdr_typology = "typology_id", "description";
+  DEFINE FILENAME action_file;
+  DEFINE HEADER hdr_action = "action_name", "description", "default_route";
+  LOAD policy_file TO VERTEX PolicyClause VALUES ($"clause_id", $"text") USING header="true", user_defined_header="hdr_policy", separator="\t";
+  LOAD typology_file TO VERTEX FraudTypology VALUES ($"typology_id", $"description") USING header="true", user_defined_header="hdr_typology", separator="\t";
+  LOAD action_file TO VERTEX Action VALUES ($"action_name", $"description", $"default_route") USING header="true", user_defined_header="hdr_action", separator="\t";
+}

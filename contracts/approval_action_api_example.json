@@ -1,0 +1,41 @@
+{
+  "_note": "PROPOSED by P3, not yet confirmed by P2 — see approval_action_api_schema.json for the full schema and rationale. Illustrative request/response pairs only.",
+
+  "example_approve_request": {
+    "endpoint": "POST /cases/CASE-000001/decisions/D1/review",
+    "body": {
+      "status": "approved",
+      "actor": "analyst_jane",
+      "note": null
+    }
+  },
+  "example_approve_response_200": {
+    "case_id": "CASE-000001",
+    "decision_id": "D1",
+    "status": "approved",
+    "actor": "analyst_jane",
+    "timestamp": "2026-09-22T15:48:37Z",
+    "execution_result": null
+  },
+
+  "example_reject_request": {
+    "endpoint": "POST /cases/CASE-000002/decisions/D3/review",
+    "body": {
+      "status": "rejected",
+      "actor": "analyst_jane",
+      "note": "Exposure too low to justify a full account freeze; downgrading to MONITOR_CARD manually."
+    }
+  },
+  "example_reject_response_200": {
+    "case_id": "CASE-000002",
+    "decision_id": "D3",
+    "status": "rejected",
+    "actor": "analyst_jane",
+    "timestamp": "2026-09-22T15:50:12Z",
+    "execution_result": null
+  },
+
+  "example_error_response_409": {
+    "error": "Decision D1 on case CASE-000001 was already resolved (status=approved) by analyst_jane at 2026-09-22T15:48:37Z."
+  }
+}

@@ -1,0 +1,108 @@
+{
+  "case_id": "HHG-017",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.381,
+    "pattern": "card_not_present_fraud",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3450629"
+    ],
+    "first_suspicious_txn_id": "3450629",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "MacOS|Mac OS X 10_11_6|chrome 63.0|1440x900",
+      "MacOS|Mac OS X 10_13_3|safari generic|3840x2160",
+      "Windows|Windows 10|chrome 63.0|1920x1080",
+      "Windows|Windows 10|chrome 65.0|1920x1080"
+    ],
+    "exposure_usd": 100.09,
+    "evidence": [
+      {
+        "claim": "Trigger (risk_score): Real-time model scored transaction 3450629 ($100.09, online) at 0.57. Review and decide.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3450629"
+        ]
+      },
+      {
+        "claim": "23 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "2 txns in the last hour totaling $200.05, z-score -0.31",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "3 txns in the last 48h totaling $300.14, z-score 0.20",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-0175 (similarity 0.4976, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-0175"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1262 (similarity 0.4959, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1262"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1211 (similarity 0.485, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1211"
+        ]
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007 was reviewed. The activity is consistent with card not present fraud (POL-004). Most similar prior case: CC-0175 (similarity 0.4976, outcome cleared). Confidence 0.381 (low risk).",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-017"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+      }
+    ],
+    "final": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
+  "tool_calls": 9,
+  "tokens": 42,
+  "latency_s": 0.26
+}

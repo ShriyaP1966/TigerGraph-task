@@ -1,0 +1,52 @@
+{
+  "case_a": "HHG-015",
+  "case_b": "DEMO-B",
+  "before": {
+    "verdict": "legitimate",
+    "confidence": 0.411,
+    "final_actions": [
+      "CLOSE_NO_FRAUD"
+    ],
+    "top_similar_cases": [
+      {
+        "case_id": "CC-0987",
+        "similarity": 0.4824,
+        "outcome": "cleared"
+      },
+      {
+        "case_id": "CC-0091",
+        "similarity": 0.3813,
+        "outcome": "cleared"
+      },
+      {
+        "case_id": "CC-4643",
+        "similarity": 0.3217,
+        "outcome": "cleared"
+      }
+    ]
+  },
+  "after": {
+    "verdict": "legitimate",
+    "confidence": 0.411,
+    "final_actions": [
+      "CLOSE_NO_FRAUD"
+    ],
+    "top_similar_cases": [
+      {
+        "case_id": "CC-0987",
+        "similarity": 0.4824,
+        "outcome": "cleared"
+      },
+      {
+        "case_id": "HHG-015",
+        "similarity": 0.4419,
+        "outcome": "cleared"
+      },
+      {
+        "case_id": "CC-0091",
+        "similarity": 0.3813,
+        "outcome": "cleared"
+      }
+    ]
+  }
+}

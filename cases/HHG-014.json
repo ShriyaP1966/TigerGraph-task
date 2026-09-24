@@ -1,0 +1,106 @@
+{
+  "case_id": "HHG-014",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.3557,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3478561"
+    ],
+    "first_suspicious_txn_id": "3478561",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "SM-G935F Build/NRD90M|Android 7.0|chrome 62.0 for android|1920x1080",
+      "Windows|Windows 10|edge 16.0|1920x1080"
+    ],
+    "exposure_usd": 74.96,
+    "evidence": [
+      {
+        "claim": "Trigger (analyst_request): Analyst request: several cards this month show purchases from the same unusual device profile. Review transaction 3478561 on card C13487-K1 and look for related activity.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3478561"
+        ]
+      },
+      {
+        "claim": "46 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last hour totaling $74.96, z-score 0.55",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "2 txns in the last 48h totaling $111.00, z-score 1.56",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-2985 (similarity 0.2828, outcome confirmed_fraud, pattern undocumented)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-2985"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-3035 (similarity 0.2828, outcome confirmed_fraud, pattern undocumented)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-3035"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-2971 (similarity 0.272, outcome confirmed_fraud, pattern undocumented)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-2971"
+        ]
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007 was reviewed. The activity is consistent with card not present new device (POL-004). Most similar prior case: CC-2985 (similarity 0.2828, outcome confirmed_fraud). Confidence 0.3557 (low risk).",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-014"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "final": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
+  "tool_calls": 9,
+  "tokens": 44,
+  "latency_s": 0.19
+}

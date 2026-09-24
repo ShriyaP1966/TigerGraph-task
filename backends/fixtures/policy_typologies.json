@@ -1,0 +1,12 @@
+{
+  "policy_clauses": [
+    {"clause_id": "POL-004", "text": "R1. Verify before you block on a weak signal."},
+    {"clause_id": "POL-005", "text": "R2. Customer denies the transaction: block card and create case."},
+    {"clause_id": "POL-008", "text": "R5. Card testing: three or more small authorizations then a larger purchase."}
+  ],
+  "typologies": [
+    {"typology_id": "TYP-001", "name": "Card testing", "indicators": "three or more tiny online authorizations then a larger purchase"},
+    {"typology_id": "TYP-004", "name": "Out-of-region use", "indicators": "card-present purchases in a billing region with no history"},
+    {"typology_id": "TYP-005", "name": "Account takeover", "indicators": "mixed-channel activity inconsistent with the cardholder"}
+  ]
+}

@@ -1,0 +1,117 @@
+{
+  "case_id": "HHG-020",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.356,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3509359"
+    ],
+    "first_suspicious_txn_id": "3509359",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "Trident/7.0|Windows 10|ie 11.0 for desktop|1920x1080"
+    ],
+    "exposure_usd": 125.08,
+    "evidence": [
+      {
+        "claim": "Trigger (risk_score): Real-time model scored transaction 3509359 ($125.08, online) at 0.52. Review and decide.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3509359"
+        ]
+      },
+      {
+        "claim": "56 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last hour totaling $125.08, z-score -0.06",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last 48h totaling $125.08, z-score -0.06",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-1447 (similarity 0.5214, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1447"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1183 (similarity 0.5213, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1183"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-5537 (similarity 0.5077, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-5537"
+        ]
+      },
+      {
+        "claim": "Requested step_up_auth: Step-up authentication passed",
+        "source": "external",
+        "ref": "simulate_response",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [],
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008 was reviewed. The activity is consistent with card not present new device (POL-004). Most similar prior case: CC-1447 (similarity 0.5214, outcome cleared). Confidence 0.356 (low risk).",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-020"
+  },
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 1,
+      "assumed_response": "Step-up authentication passed"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+      }
+    ],
+    "final": [
+      {
+        "action": "MONITOR_CARD",
+        "route": "auto",
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
+      }
+    ],
+    "what_changed": "Confidence before additional evidence was 0.426 (actions: ['MONITOR_CARD']). After step_up_auth response ('Step-up authentication passed'), confidence moved to 0.356 (actions: ['MONITOR_CARD'])."
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A simulated verification response settled the question.",
+  "tool_calls": 10,
+  "tokens": 45,
+  "latency_s": 0.19
+}

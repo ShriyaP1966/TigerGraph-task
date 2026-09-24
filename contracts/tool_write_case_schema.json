@@ -1,0 +1,57 @@
+{
+  "input": {
+    "properties": {
+      "case_id": {
+        "title": "Case Id",
+        "type": "string"
+      },
+      "case_json": {
+        "title": "Case Json",
+        "type": "string"
+      },
+      "opened_at": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Opened At"
+      }
+    },
+    "required": [
+      "case_id",
+      "case_json"
+    ],
+    "title": "WriteCaseInput",
+    "type": "object"
+  },
+  "output": {
+    "properties": {
+      "written": {
+        "title": "Written",
+        "type": "boolean"
+      },
+      "graph_case_id": {
+        "title": "Graph Case Id",
+        "type": "string"
+      },
+      "similar_to": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Similar To",
+        "type": "array"
+      }
+    },
+    "required": [
+      "written",
+      "graph_case_id"
+    ],
+    "title": "WriteCaseOutput",
+    "type": "object"
+  }
+}

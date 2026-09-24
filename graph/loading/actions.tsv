@@ -1,0 +1,15 @@
+action_name	description	default_route
+ALLOW_TRANSACTION	Let the flagged transaction stand. No customer impact.	auto
+DECLINE_TRANSACTION	Decline the flagged authorization only. Card stays active. Low customer impact.	L1
+MONITOR_CARD	Card stays active; raise monitoring sensitivity for 72 hours. No customer impact.	auto
+MONITOR_CONNECTED_CARDS	Put other cards linked to the same device profile, region cluster, or ring under monitoring. No customer impact.	auto
+WARN_CUSTOMER	Send an informational message (e.g. a recurring charge reminder, a security tip). No customer impact.	auto
+VERIFY_WITH_CUSTOMER	Ask the cardholder whether they made the transaction. Card stays active pending reply. Low customer impact.	auto
+STEP_UP_AUTH	Require a one-time passcode or app confirmation before further activity. Low customer impact.	auto
+BLOCK_CARD	Block this card and reissue. High customer impact. L1 if exposure <= $2500, else L2.	L1_or_L2
+BLOCK_ALL_CARDS	Block every card the customer holds. Very high customer impact. Only when >=2 cards show confirmed fraud or credentials confirmed compromised (R10).	L2
+GENERATE_REPORT	Write up the investigation for the internal record, without opening a case. No customer impact.	auto
+CREATE_CASE	Open an internal fraud case with the evidence attached, and write it to the graph. No customer impact.	auto
+FILE_REPORT	File a suspicious activity report with the regulator. Always requires fraud-manager approval.	L2
+ESCALATE_TO_ANALYST	Hand the case to a human analyst with the evidence. No customer impact.	auto
+CLOSE_NO_FRAUD	Close the alert as legitimate. No customer impact.	auto

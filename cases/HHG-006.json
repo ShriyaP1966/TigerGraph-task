@@ -1,0 +1,127 @@
+{
+  "case_id": "HHG-006",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.6218,
+    "pattern": "card_not_present_new_device",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3476682"
+    ],
+    "first_suspicious_txn_id": "3476682",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "Trident/7.0|Windows 7|ie 11.0 for desktop|1920x1080",
+      "iOS Device|iOS 11.2.1|mobile safari 11.0|2208x1242"
+    ],
+    "exposure_usd": 482.12,
+    "evidence": [
+      {
+        "claim": "Trigger (customer_report): Customer C07297 message: 'I never made this $482.12 purchase. Please check my card.' Refers to 3476682.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3476682"
+        ]
+      },
+      {
+        "claim": "144 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "4 txns in the last hour totaling $1906.07, z-score 12.30",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "6 txns in the last 48h totaling $2394.13, z-score 15.67",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-3405 (similarity 0.387, outcome confirmed_fraud, pattern out_of_region_use)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-3405"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-5192 (similarity 0.3322, outcome confirmed_fraud, pattern out_of_region_use)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-5192"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-3716 (similarity 0.3172, outcome confirmed_fraud, pattern out_of_region_use)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-3716"
+        ]
+      },
+      {
+        "claim": "Requested customer_validation: Customer states they did not make this purchase and still has the card",
+        "source": "customer",
+        "ref": "simulate_response",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-3405",
+      "CC-5192",
+      "CC-3716"
+    ],
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008 was reviewed. The activity is consistent with card not present new device (POL-004). Most similar prior case: CC-3405 (similarity 0.387, outcome confirmed_fraud). Confidence 0.6218 (medium risk). Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.6218) alone would suggest.",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-006"
+  },
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 1,
+      "assumed_response": "Customer states they did not make this purchase and still has the card"
+    }
+  ],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "final": [
+      {
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
+        "route": "auto",
+        "reason": "R2: customer denial confirms a case"
+      }
+    ],
+    "what_changed": "Confidence before additional evidence was 0.4417 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.6218 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "A simulated verification response settled the question.",
+  "tool_calls": 10,
+  "tokens": 71,
+  "latency_s": 0.19
+}

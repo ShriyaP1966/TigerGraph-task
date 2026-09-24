@@ -1,0 +1,194 @@
+// ============================================================================
+// HHGOA Fraud Investigation — TigerGraph Schema
+// Owner: P1
+// Reload: gsql graph/schema/01_schema.gsql
+// ============================================================================
+// Design notes (documented per Day-1 Definition-of-Done "short schema doc"):
+//  - V1-V339 (Vesta's unnamed engineered features) are NOT loaded into the
+//    graph. They are high-cardinality, individually meaningless per the
+//    README, and would bloat every Transaction vertex 300+ attributes wide
+//    for no query benefit. They remain available in data/raw/transactions.csv
+//    for any offline feature/embedding work. This is a deliberate scope cut,
+//    not an oversight.
+//  - Only the "readable" identity.csv columns are exploded onto Transaction:
+//    id_01-id_11 (encoded ratings), id_15 (device New/Found), id_23 (proxy),
+//    id_30 (OS), id_31 (browser), id_33 (screen), id_34 (match status),
+//    DeviceType, DeviceInfo. The remaining ~21 uninterpreted id_12-38 columns
+//    are left in the raw CSV for the same reason as above.
+//  - DeviceProfile is keyed on DeviceInfo|OS|browser|screen exactly as the
+//    dataset README specifies, so it is a many-cards-to-one-profile hub —
+//    this is the fraud-ring backbone.
+//  - InvestigationCase (agent-created cases) is a separate vertex type from
+//    ClosedCase (pre-existing labeled history). ClosedCase is immutable
+//    ground truth to retrieve as memory; InvestigationCase is what
+//    write_case_to_graph creates/updates, and is also valid SIMILAR_TO
+//    memory for later cases.
+// ============================================================================
+
+CREATE VERTEX Customer (
+  PRIMARY_ID customer_id STRING
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX Card (
+  PRIMARY_ID card_id STRING,
+  customer_id STRING,
+  card1 STRING,
+  card2 STRING,
+  card3 STRING,
+  network STRING,      // card4: visa / mastercard / american express / discover
+  card5 STRING,
+  card_type STRING      // card6: credit / debit
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX Transaction (
+  PRIMARY_ID txn_id STRING,
+  transaction_dt INT,
+  amount DOUBLE,
+  product_cd STRING,
+  addr1 STRING,
+  addr2 STRING,
+  dist1 DOUBLE,
+  dist2 DOUBLE,
+  p_email_domain STRING,
+  r_email_domain STRING,
+  c1 DOUBLE, c2 DOUBLE, c3 DOUBLE, c4 DOUBLE, c5 DOUBLE, c6 DOUBLE, c7 DOUBLE,
+  c8 DOUBLE, c9 DOUBLE, c10 DOUBLE, c11 DOUBLE, c12 DOUBLE, c13 DOUBLE, c14 DOUBLE,
+  d1 DOUBLE, d2 DOUBLE, d3 DOUBLE, d4 DOUBLE, d5 DOUBLE, d6 DOUBLE, d7 DOUBLE,
+  d8 DOUBLE, d9 DOUBLE, d10 DOUBLE, d11 DOUBLE, d12 DOUBLE, d13 DOUBLE, d14 DOUBLE, d15 DOUBLE,
+  m1 STRING, m2 STRING, m3 STRING, m4 STRING, m5 STRING, m6 STRING, m7 STRING, m8 STRING, m9 STRING,
+  ts DATETIME,
+  channel STRING,        // in_person | online
+  risk_score DOUBLE,
+  // identity.csv readable columns (online txns only, null for in_person)
+  id_01 DOUBLE, id_02 DOUBLE, id_03 DOUBLE, id_04 DOUBLE, id_05 DOUBLE,
+  id_06 DOUBLE, id_07 DOUBLE, id_08 DOUBLE, id_09 DOUBLE, id_10 DOUBLE, id_11 DOUBLE,
+  device_new STRING,     // id_15
+  proxy_rating STRING,   // id_23
+  os STRING,             // id_30
+  browser STRING,        // id_31
+  screen STRING,         // id_33
+  match_status STRING,   // id_34
+  device_type STRING,    // DeviceType
+  device_info STRING     // DeviceInfo
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX DeviceProfile (
+  PRIMARY_ID device_id STRING,   // hash/concat of device_info|os|browser|screen
+  device_info STRING,
+  os STRING,
+  browser STRING,
+  screen STRING,
+  device_type STRING
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX EmailDomain (
+  PRIMARY_ID domain STRING
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX BillingRegion (
+  PRIMARY_ID region_code STRING,   // addr1
+  country_code STRING              // addr2 (most common observed)
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX ClosedCase (
+  PRIMARY_ID case_id STRING,
+  customer_id STRING,
+  card_id STRING,
+  opened_at DATETIME,
+  closed_at DATETIME,
+  outcome STRING,               // confirmed_fraud | cleared
+  pattern STRING,
+  first_fraud_txn_id STRING,
+  txn_ids LIST<STRING>,
+  n_txns INT,
+  exposure_usd DOUBLE,
+  connected_card_ids LIST<STRING>,
+  actions_taken STRING,
+  report_filed BOOL,
+  analyst_notes STRING
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX InvestigationCase (
+  PRIMARY_ID graph_case_id STRING,
+  case_pack_id STRING,          // HHG-xxx
+  status STRING,                // open | closed_fraud | closed_legitimate | escalated
+  verdict STRING,                // fraud | legitimate | uncertain
+  fraud_probability DOUBLE,
+  pattern STRING,
+  pattern_description STRING,
+  exposure_usd DOUBLE,
+  first_suspicious_txn_id STRING,
+  summary STRING,
+  stop_reason STRING,
+  opened_at DATETIME,
+  updated_at DATETIME
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX Evidence (
+  PRIMARY_ID evidence_id STRING,
+  claim STRING,
+  source STRING,      // graph | document | customer | external
+  ref STRING,
+  entity_ids LIST<STRING>
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX PolicyClause (
+  PRIMARY_ID clause_id STRING,   // R1..R10
+  text STRING
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX FraudTypology (
+  PRIMARY_ID typology_id STRING, // card_testing, card_not_present_fraud, card_not_present_new_device,
+                                    // out_of_region_use, account_takeover, undocumented, none
+  description STRING
+) WITH primary_id_as_attribute="true"
+
+CREATE VERTEX Action (
+  PRIMARY_ID action_name STRING, // e.g. BLOCK_CARD
+  description STRING,
+  default_route STRING           // auto | L1 | L2 (baseline; case-specific route stored on the edge)
+) WITH primary_id_as_attribute="true"
+
+// ---------------------------------------------------------------------------
+// Edges
+// ---------------------------------------------------------------------------
+
+CREATE DIRECTED EDGE OWNS (FROM Customer, TO Card) WITH REVERSE_EDGE="reverse_OWNS"
+CREATE DIRECTED EDGE MADE (FROM Card, TO Transaction) WITH REVERSE_EDGE="reverse_MADE"
+CREATE DIRECTED EDGE FROM_DEVICE (FROM Transaction, TO DeviceProfile) WITH REVERSE_EDGE="reverse_FROM_DEVICE"
+CREATE DIRECTED EDGE PURCHASER_EMAIL (FROM Transaction, TO EmailDomain) WITH REVERSE_EDGE="reverse_PURCHASER_EMAIL"
+CREATE DIRECTED EDGE RECIPIENT_EMAIL (FROM Transaction, TO EmailDomain) WITH REVERSE_EDGE="reverse_RECIPIENT_EMAIL"
+CREATE DIRECTED EDGE BILLED_IN (FROM Transaction, TO BillingRegion) WITH REVERSE_EDGE="reverse_BILLED_IN"
+CREATE DIRECTED EDGE NEXT (FROM Transaction, TO Transaction)   // ordered by ts within a card, built post-load
+
+// Derived fraud-ring backbone (self-join on Card) — undirected in practice,
+// modeled as directed with a reverse edge so traversal works both ways.
+CREATE DIRECTED EDGE SHARES_DEVICE (FROM Card, TO Card, device_id STRING) WITH REVERSE_EDGE="reverse_SHARES_DEVICE"
+CREATE DIRECTED EDGE SHARES_EMAIL (FROM Card, TO Card, domain STRING) WITH REVERSE_EDGE="reverse_SHARES_EMAIL"
+CREATE DIRECTED EDGE SHARES_ADDRESS (FROM Card, TO Card, region_code STRING) WITH REVERSE_EDGE="reverse_SHARES_ADDRESS"
+
+CREATE DIRECTED EDGE INVOLVES_TXN (FROM ClosedCase, TO Transaction, role STRING)
+CREATE DIRECTED EDGE ON_CARD (FROM ClosedCase, TO Card) WITH REVERSE_EDGE="reverse_ON_CARD"
+CREATE DIRECTED EDGE CONNECTED_TO (FROM ClosedCase, TO Card)
+
+CREATE DIRECTED EDGE CASE_INVOLVES_TXN (FROM InvestigationCase, TO Transaction, role STRING)
+CREATE DIRECTED EDGE CASE_INVOLVES_CARD (FROM InvestigationCase, TO Card) WITH REVERSE_EDGE="reverse_CASE_INVOLVES_CARD"
+CREATE DIRECTED EDGE CASE_INVOLVES_CUSTOMER (FROM InvestigationCase, TO Customer)
+CREATE DIRECTED EDGE HAS_EVIDENCE (FROM InvestigationCase, TO Evidence)
+CREATE DIRECTED EDGE CITES (FROM InvestigationCase, TO PolicyClause)
+CREATE DIRECTED EDGE MATCHES (FROM InvestigationCase, TO FraudTypology)
+CREATE DIRECTED EDGE RECOMMENDS (FROM InvestigationCase, TO Action, phase STRING, route STRING, reason STRING)
+
+// Case memory — the differentiator. One edge type, two possible targets.
+CREATE DIRECTED EDGE SIMILAR_TO (FROM InvestigationCase, TO ClosedCase, similarity_score DOUBLE, match_reason STRING)
+CREATE DIRECTED EDGE SIMILAR_CASE (FROM InvestigationCase, TO InvestigationCase, similarity_score DOUBLE, match_reason STRING)
+
+CREATE GRAPH FraudGraph (
+  Customer, Card, Transaction, DeviceProfile, EmailDomain, BillingRegion,
+  ClosedCase, InvestigationCase, Evidence, PolicyClause, FraudTypology, Action,
+  OWNS, MADE, FROM_DEVICE, PURCHASER_EMAIL, RECIPIENT_EMAIL, BILLED_IN, NEXT,
+  SHARES_DEVICE, SHARES_EMAIL, SHARES_ADDRESS,
+  INVOLVES_TXN, ON_CARD, CONNECTED_TO,
+  CASE_INVOLVES_TXN, CASE_INVOLVES_CARD, CASE_INVOLVES_CUSTOMER,
+  HAS_EVIDENCE, CITES, MATCHES, RECOMMENDS, SIMILAR_TO, SIMILAR_CASE
+)

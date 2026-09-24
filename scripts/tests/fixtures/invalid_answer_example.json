@@ -1,0 +1,50 @@
+{
+  "case_id": "HHG-999",
+  "case": {
+    "status": "closed_fraud",
+    "verdict": "legitimate",
+    "fraud_probability": 0.2,
+    "pattern": "phishing",
+    "pattern_description": "This should be empty since pattern is not 'undocumented'.",
+    "affected_txn_ids": ["3000120"],
+    "first_suspicious_txn_id": "3000120",
+    "connected_card_ids": [],
+    "connected_device_profiles": [],
+    "exposure_usd": 5000,
+    "evidence": [
+      {
+        "claim": "",
+        "source": "email",
+        "ref": "manual",
+        "entity_ids": []
+      }
+    ],
+    "similar_prior_cases": ["CC-0141", "CC-9999"],
+    "summary": "Deliberately broken fixture for testing the validator.",
+    "written_to_graph": true,
+    "graph_case_id": "CASE-TEST-0001"
+  },
+  "evidence_requests": [
+    { "type": "email_confirmation", "asked_after_step": "4", "assumed_response": "" }
+  ],
+  "next_best_actions": {
+    "initial": [
+      { "action": "FREEZE_EVERYTHING", "route": "auto", "reason": "Not a real policy action." }
+    ],
+    "final": [
+      { "action": "BLOCK_ALL_CARDS", "route": "L1", "reason": "Should require L2 per policy." },
+      { "action": "BLOCK_CARD", "route": "L1", "reason": "Exposure is $5000, over the $2500 threshold, should require L2." }
+    ],
+    "what_changed": ""
+  },
+  "sar": {
+    "file": true,
+    "reason": "Testing mismatch: FILE_REPORT is not actually in final actions.",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 5000,
+    "activity_dates": ["2016-07-02"]
+  },
+  "tool_calls": 9.5,
+  "latency_s": "not-a-number"
+}

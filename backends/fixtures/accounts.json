@@ -1,0 +1,41 @@
+{
+  "ACCT-RING-1": {
+    "cards": ["ACCT-RING-1-K1"],
+    "devices": ["DEV-SHARED-1"],
+    "emails": ["sketchy-mail.com"],
+    "addresses": ["444.0"],
+    "transactions": [
+      {"txn_id": "T900001", "ts": "2016-12-05T01:40:00Z", "amount": 1.50, "product_cd": "C", "channel": "online", "risk_score": 0.3, "card_id": "ACCT-RING-1-K1"},
+      {"txn_id": "T900002", "ts": "2016-12-05T01:45:00Z", "amount": 2.10, "product_cd": "C", "channel": "online", "risk_score": 0.35, "card_id": "ACCT-RING-1-K1"},
+      {"txn_id": "T900003", "ts": "2016-12-05T01:50:00Z", "amount": 0.99, "product_cd": "C", "channel": "online", "risk_score": 0.4, "card_id": "ACCT-RING-1-K1"},
+      {"txn_id": "T900004", "ts": "2016-12-05T01:55:28Z", "amount": 77.07, "product_cd": "W", "channel": "in_person", "risk_score": 0.61, "card_id": "ACCT-RING-1-K1"}
+    ],
+    "edges": [
+      {"src": "ACCT-RING-1", "dst": "ACCT-RING-2", "type": "SHARES_DEVICE"}
+    ]
+  },
+  "ACCT-RING-2": {
+    "cards": ["ACCT-RING-2-K1"],
+    "devices": ["DEV-SHARED-1"],
+    "emails": ["sketchy-mail.com"],
+    "addresses": ["444.0"],
+    "transactions": [
+      {"txn_id": "T900010", "ts": "2016-11-01T09:00:00Z", "amount": 155.00, "product_cd": "C", "channel": "online", "risk_score": 0.7, "card_id": "ACCT-RING-2-K1"}
+    ],
+    "edges": [
+      {"src": "ACCT-RING-2", "dst": "ACCT-RING-1", "type": "SHARES_DEVICE"}
+    ]
+  },
+  "ACCT-CLEAN-1": {
+    "cards": ["ACCT-CLEAN-1-K1"],
+    "devices": ["DEV-OWN-1"],
+    "emails": ["personal-domain.com"],
+    "addresses": ["120.0"],
+    "transactions": [
+      {"txn_id": "T900100", "ts": "2016-10-01T12:00:00Z", "amount": 45.00, "product_cd": "W", "channel": "in_person", "risk_score": 0.1, "card_id": "ACCT-CLEAN-1-K1"},
+      {"txn_id": "T900101", "ts": "2016-11-01T12:00:00Z", "amount": 50.00, "product_cd": "W", "channel": "in_person", "risk_score": 0.12, "card_id": "ACCT-CLEAN-1-K1"},
+      {"txn_id": "T900102", "ts": "2016-12-08T03:38:37Z", "amount": 100.07, "product_cd": "R", "channel": "online", "risk_score": 0.54, "card_id": "ACCT-CLEAN-1-K1"}
+    ],
+    "edges": []
+  }
+}

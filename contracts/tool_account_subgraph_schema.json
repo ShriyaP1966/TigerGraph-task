@@ -1,0 +1,209 @@
+{
+  "input": {
+    "properties": {
+      "account_id": {
+        "title": "Account Id",
+        "type": "string"
+      },
+      "as_of": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "As Of"
+      },
+      "card_id": {
+        "anyOf": [
+          {
+            "type": "string"
+          },
+          {
+            "type": "null"
+          }
+        ],
+        "default": null,
+        "title": "Card Id"
+      }
+    },
+    "required": [
+      "account_id"
+    ],
+    "title": "AccountSubgraphInput",
+    "type": "object"
+  },
+  "output": {
+    "$defs": {
+      "Edge": {
+        "properties": {
+          "src": {
+            "title": "Src",
+            "type": "string"
+          },
+          "dst": {
+            "title": "Dst",
+            "type": "string"
+          },
+          "type": {
+            "title": "Type",
+            "type": "string"
+          }
+        },
+        "required": [
+          "src",
+          "dst",
+          "type"
+        ],
+        "title": "Edge",
+        "type": "object"
+      },
+      "TxnSummary": {
+        "properties": {
+          "txn_id": {
+            "title": "Txn Id",
+            "type": "string"
+          },
+          "ts": {
+            "title": "Ts",
+            "type": "string"
+          },
+          "amount": {
+            "title": "Amount",
+            "type": "number"
+          },
+          "product_cd": {
+            "title": "Product Cd",
+            "type": "string"
+          },
+          "channel": {
+            "title": "Channel",
+            "type": "string"
+          },
+          "risk_score": {
+            "anyOf": [
+              {
+                "type": "number"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Risk Score"
+          },
+          "card_id": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Card Id"
+          },
+          "device_new": {
+            "anyOf": [
+              {
+                "type": "boolean"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Device New"
+          },
+          "addr1": {
+            "anyOf": [
+              {
+                "type": "string"
+              },
+              {
+                "type": "null"
+              }
+            ],
+            "default": null,
+            "title": "Addr1"
+          }
+        },
+        "required": [
+          "txn_id",
+          "ts",
+          "amount",
+          "product_cd",
+          "channel"
+        ],
+        "title": "TxnSummary",
+        "type": "object"
+      }
+    },
+    "properties": {
+      "accounts": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Accounts",
+        "type": "array"
+      },
+      "transactions": {
+        "items": {
+          "$ref": "#/$defs/TxnSummary"
+        },
+        "title": "Transactions",
+        "type": "array"
+      },
+      "cards": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Cards",
+        "type": "array"
+      },
+      "devices": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Devices",
+        "type": "array"
+      },
+      "emails": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Emails",
+        "type": "array"
+      },
+      "addresses": {
+        "items": {
+          "type": "string"
+        },
+        "title": "Addresses",
+        "type": "array"
+      },
+      "edges": {
+        "items": {
+          "$ref": "#/$defs/Edge"
+        },
+        "title": "Edges",
+        "type": "array"
+      }
+    },
+    "required": [
+      "accounts",
+      "transactions",
+      "cards",
+      "devices",
+      "emails",
+      "addresses",
+      "edges"
+    ],
+    "title": "AccountSubgraphOutput",
+    "type": "object"
+  }
+}

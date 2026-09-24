@@ -1,0 +1,120 @@
+{
+  "case_id": "HHG-009",
+  "case": {
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.3237,
+    "pattern": "account_takeover",
+    "pattern_description": "",
+    "affected_txn_ids": [
+      "3581141"
+    ],
+    "first_suspicious_txn_id": "3581141",
+    "connected_card_ids": [],
+    "connected_device_profiles": [
+      "?|Android|chrome 66.0|1280x720",
+      "Trident/7.0|Windows 10|ie 11.0 for desktop|1366x768",
+      "Trident/7.0|Windows 7|ie 11.0 for desktop|1600x900",
+      "Windows|Windows 10|chrome 64.0|1680x1050",
+      "Windows|Windows 10|chrome generic|1680x1050",
+      "Windows|Windows 10|chrome generic|1920x1080",
+      "Windows|Windows 10|edge 14.0|1920x1080",
+      "Windows|Windows 10|edge 16.0|1366x767",
+      "Windows|Windows 10|firefox 59.0|1600x900",
+      "Windows|Windows 7|chrome 64.0|1440x900",
+      "Windows|Windows 7|firefox 58.0|1366x768",
+      "Windows|Windows 7|firefox 59.0|1366x768",
+      "iOS Device|iOS 9.3.5|mobile safari 9.0|1024x768"
+    ],
+    "exposure_usd": 30.02,
+    "evidence": [
+      {
+        "claim": "Trigger (customer_report): Customer C08299 message: 'I never made this $30.02 purchase. Please check my card.' Refers to 3581141.",
+        "source": "graph",
+        "ref": "case_pack",
+        "entity_ids": [
+          "3581141"
+        ]
+      },
+      {
+        "claim": "22 transactions in the account's recent window",
+        "source": "graph",
+        "ref": "get_account_subgraph",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last hour totaling $30.02, z-score -0.41",
+        "source": "graph",
+        "ref": "get_transaction_velocity(1h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "1 txns in the last 48h totaling $30.02, z-score -0.41",
+        "source": "graph",
+        "ref": "get_transaction_velocity(48h)",
+        "entity_ids": []
+      },
+      {
+        "claim": "Similar prior case CC-1702 (similarity 0.3808, outcome cleared, pattern none)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1702"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1616 (similarity 0.3587, outcome confirmed_fraud, pattern out_of_region_use)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1616"
+        ]
+      },
+      {
+        "claim": "Similar prior case CC-1479 (similarity 0.3465, outcome confirmed_fraud, pattern out_of_region_use)",
+        "source": "graph",
+        "ref": "get_prior_similar_cases",
+        "entity_ids": [
+          "CC-1479"
+        ]
+      }
+    ],
+    "similar_prior_cases": [
+      "CC-1616",
+      "CC-1479"
+    ],
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007 was reviewed. The activity is consistent with account takeover (POL-004). Most similar prior case: CC-1702 (similarity 0.3808, outcome cleared). Confidence 0.3237 (low risk).",
+    "written_to_graph": true,
+    "graph_case_id": "LOCAL-HHG-009"
+  },
+  "evidence_requests": [],
+  "next_best_actions": {
+    "initial": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "final": [
+      {
+        "action": "VERIFY_WITH_CUSTOMER",
+        "route": "auto",
+        "reason": "R1: single weak signal, verify before any block"
+      }
+    ],
+    "what_changed": "nothing"
+  },
+  "sar": {
+    "file": false,
+    "reason": "not required for this case",
+    "narrative": "",
+    "subjects": [],
+    "total_amount_usd": 0.0,
+    "activity_dates": []
+  },
+  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
+  "tool_calls": 9,
+  "tokens": 40,
+  "latency_s": 0.2
+}

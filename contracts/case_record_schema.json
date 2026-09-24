@@ -1,0 +1,182 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "case_record_schema.json",
+  "title": "FraudCase Record",
+  "description": "Contract between the agent backend (P2) and the analyst UI (P3). This is what the agent writes and what the UI renders. Draft — confirm field names/enums against the dataset README, then treat changes to this file as a breaking change that needs a heads-up to whoever owns the other side.",
+  "type": "object",
+  "required": ["case_id", "created_at", "updated_at", "status", "trigger", "entities", "investigation_record", "decisions_and_actions", "next_best_action", "sar", "explanation", "case_memory"],
+  "properties": {
+    "case_id": { "type": "string", "description": "Stable unique case identifier, e.g. CASE-000123" },
+    "created_at": { "type": "string", "format": "date-time" },
+    "updated_at": { "type": "string", "format": "date-time" },
+    "status": {
+      "type": "string",
+      "enum": ["open", "gathering_evidence", "pending_approval", "pending_customer_response", "closed_fraud", "closed_cleared", "closed_monitoring"]
+    },
+    "trigger": {
+      "type": "object",
+      "required": ["type", "source_id", "timestamp"],
+      "properties": {
+        "type": { "type": "string", "enum": ["risk_score", "customer_report", "analyst_request"] },
+        "source_id": { "type": "string", "description": "TransactionID, report ID, or analyst request ID that started this case" },
+        "timestamp": { "type": "string", "format": "date-time" },
+        "details": { "type": "string" }
+      }
+    },
+    "entities": {
+      "type": "object",
+      "description": "The graph entities this case is anchored on — used by the UI to drive the subgraph visualization.",
+      "properties": {
+        "customer_id": { "type": ["string", "null"] },
+        "account_ids": { "type": "array", "items": { "type": "string" } },
+        "transaction_ids": { "type": "array", "items": { "type": "string" } },
+        "device_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "investigation_record": {
+      "type": "object",
+      "required": ["evidence_gathered", "findings", "risk_assessment"],
+      "properties": {
+        "entities_examined": { "type": "array", "items": { "type": "string" } },
+        "evidence_gathered": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["evidence_id", "type", "description", "source_tool", "timestamp"],
+            "properties": {
+              "evidence_id": { "type": "string", "description": "e.g. E1, E2 — referenced by findings and the explanation text" },
+              "type": {
+                "type": "string",
+                "enum": ["graph_pattern", "transaction_history", "device_signal", "identity_signal", "prior_case", "policy", "analyst_input", "customer_response"]
+              },
+              "description": { "type": "string" },
+              "source_tool": { "type": "string", "description": "Name of the MCP tool / function that produced this evidence" },
+              "timestamp": { "type": "string", "format": "date-time" }
+            }
+          }
+        },
+        "findings": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["finding_id", "description", "supporting_evidence"],
+            "properties": {
+              "finding_id": { "type": "string" },
+              "description": { "type": "string" },
+              "supporting_evidence": { "type": "array", "items": { "type": "string" }, "description": "evidence_id references" }
+            }
+          }
+        },
+        "fraud_pattern_identified": { "type": ["string", "null"], "description": "FraudTypology id, e.g. TYP-003, or null" },
+        "risk_assessment": {
+          "type": "object",
+          "required": ["confidence_score", "confidence_breakdown", "risk_level", "rationale"],
+          "properties": {
+            "confidence_score": { "type": "number", "minimum": 0, "maximum": 1 },
+            "confidence_breakdown": {
+              "type": "object",
+              "description": "Named, weighted components summing to confidence_score — this is what the UI renders as the transparency panel.",
+              "properties": {
+                "bank_risk_score": { "type": "number" },
+                "typology_match_strength": { "type": "number" },
+                "similarity_to_confirmed_fraud": { "type": "number" },
+                "evidence_coverage_ratio": { "type": "number" }
+              }
+            },
+            "risk_level": { "type": "string", "enum": ["low", "medium", "high"] },
+            "rationale": { "type": "string" }
+          }
+        }
+      }
+    },
+    "decisions_and_actions": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["decision_id", "action", "requires_approval", "approval_route", "status", "timestamp"],
+        "properties": {
+          "decision_id": { "type": "string" },
+          "decision": { "type": "string", "description": "Human-readable rationale for this decision" },
+          "action": {
+            "type": "string",
+            "enum": ["allow_transaction", "block_transaction", "monitor_account", "freeze_account", "warn_customer", "create_case", "file_report", "request_more_evidence", "escalate_to_analyst", "close_case"]
+          },
+          "requires_approval": { "type": "boolean" },
+          "approval_route": { "type": "string", "description": "e.g. 'auto', 'fraud_analyst', 'compliance_officer'" },
+          "status": { "type": "string", "enum": ["recommended", "pending_approval", "approved", "rejected", "executed"] },
+          "actor": { "type": "string", "description": "'agent' or the human who approved/rejected" },
+          "timestamp": { "type": "string", "format": "date-time" }
+        }
+      }
+    },
+    "additional_evidence_requests": {
+      "type": "array",
+      "items": {
+        "type": "object",
+        "required": ["request_id", "requested_at", "type", "reason", "status"],
+        "properties": {
+          "request_id": { "type": "string" },
+          "requested_at": { "type": "string", "enum": ["before_initial_assessment", "after_initial_assessment"] },
+          "type": { "type": "string", "enum": ["account_owner_validation", "step_up_authentication", "analyst_input"] },
+          "reason": { "type": "string" },
+          "status": { "type": "string", "enum": ["pending", "received", "timed_out"] },
+          "result": { "type": ["string", "null"] }
+        }
+      }
+    },
+    "next_best_action": {
+      "type": "object",
+      "required": ["before_additional_evidence", "after_additional_evidence"],
+      "description": "Required by the submission spec: the NBA + approval route recorded both before and after any additional evidence is gathered. If no additional evidence was ever requested, both fields hold the same value.",
+      "properties": {
+        "before_additional_evidence": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string" },
+            "approval_route": { "type": "string" },
+            "rationale": { "type": "string" }
+          }
+        },
+        "after_additional_evidence": {
+          "type": "object",
+          "properties": {
+            "action": { "type": "string" },
+            "approval_route": { "type": "string" },
+            "rationale": { "type": "string" }
+          }
+        }
+      }
+    },
+    "sar": {
+      "type": "object",
+      "required": ["filed"],
+      "properties": {
+        "filed": { "type": "boolean" },
+        "content": { "type": ["string", "null"] },
+        "policy_clause_ids": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Narrative summary citing evidence IDs (E1, E2...) and policy clause IDs (POL-001...) inline."
+    },
+    "case_memory": {
+      "type": "object",
+      "required": ["stored", "similar_prior_cases_used"],
+      "properties": {
+        "stored": { "type": "boolean" },
+        "similar_prior_cases_used": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "case_id": { "type": "string" },
+              "similarity_score": { "type": "number" },
+              "outcome": { "type": "string" }
+            }
+          }
+        }
+      }
+    }
+  }
+}

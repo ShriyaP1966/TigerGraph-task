@@ -1,0 +1,91 @@
+// ============================================================================
+// Derived fraud-ring backbone: SHARES_DEVICE, SHARES_EMAIL, SHARES_ADDRESS
+// between Card vertices. This is the self-join P1 owns per the plan --
+// the foundation for find_fraud_ring / WCC clustering.
+//
+// IMPORTANT — combinatorial-blowup guard: this dataset only has 60 distinct
+// email domains and 332 billing regions across 13,553 customers. A naive
+// self-join on "same email domain" or "same billing region" would connect
+// nearly every card to every other card through generic providers
+// (gmail.com, yahoo.com, ...) and common regions, producing a dense,
+// meaningless graph. DeviceProfile (9,705 distinct profiles) does not have
+// this problem -- device fingerprints are naturally high-cardinality, so
+// SHARES_DEVICE is built without a threshold.
+//
+// SHARES_EMAIL and SHARES_ADDRESS therefore take a max_cards parameter:
+// only build the edge for a shared domain/region if the number of distinct
+// cards touching it is AT OR BELOW that threshold. A domain/region touched
+// by hundreds of cards is not a ring signal, it's just a popular provider
+// or a populous region -- exactly the caution the dataset README gives
+// ("Devices and regions connect people... some cases can only be solved by
+// asking what happened on other cards", implying a *narrow*, specific
+// shared element, not a broad one).
+//
+// Run once after loading (and re-run if data changes):
+//   gsql -g FraudGraph "RUN QUERY build_shares_device()"
+//   gsql -g FraudGraph "RUN QUERY build_shares_email(30)"
+//   gsql -g FraudGraph "RUN QUERY build_shares_address(60)"
+// ============================================================================
+
+USE GRAPH FraudGraph
+
+CREATE OR REPLACE QUERY build_shares_device() FOR GRAPH FraudGraph SYNTAX v2 {
+  // Every pair of distinct cards whose transactions touched the same
+  // device profile. No threshold: device fingerprints are specific enough
+  // that even a handful of shared cards is a meaningful signal.
+  Pairs =
+    SELECT c2
+    FROM DeviceProfile:d -(reverse_FROM_DEVICE:e1)- Transaction:t1
+                         -(reverse_MADE:e2)- Card:c1,
+         d -(reverse_FROM_DEVICE:e3)- Transaction:t2
+           -(reverse_MADE:e4)- Card:c2
+    WHERE c1.card_id < c2.card_id
+    ACCUM INSERT INTO SHARES_DEVICE VALUES (c1, c2, d.device_id);
+  PRINT "build_shares_device done";
+}
+
+CREATE OR REPLACE QUERY build_shares_email(INT max_cards) FOR GRAPH FraudGraph SYNTAX v2 {
+  // Skip domains that are too common to be a ring signal.
+  SumAccum<INT> @@dummy;
+  SetAccum<STRING> @cards_at_domain;
+
+  Domains = SELECT dom
+            FROM EmailDomain:dom -(reverse_PURCHASER_EMAIL:e)- Transaction:t
+                                 -(reverse_MADE:e2)- Card:c
+            ACCUM dom.@cards_at_domain += c.card_id;
+
+  Domains = SELECT dom FROM Domains:dom
+            WHERE dom.@cards_at_domain.size() >= 2 AND dom.@cards_at_domain.size() <= max_cards;
+
+  Pairs =
+    SELECT c2
+    FROM Domains:dom -(reverse_PURCHASER_EMAIL:e1)- Transaction:t1
+                     -(reverse_MADE:e2)- Card:c1,
+         dom -(reverse_PURCHASER_EMAIL:e3)- Transaction:t2
+             -(reverse_MADE:e4)- Card:c2
+    WHERE c1.card_id < c2.card_id
+    ACCUM INSERT INTO SHARES_EMAIL VALUES (c1, c2, dom.domain);
+  PRINT "build_shares_email done";
+}
+
+CREATE OR REPLACE QUERY build_shares_address(INT max_cards) FOR GRAPH FraudGraph SYNTAX v2 {
+  SetAccum<STRING> @cards_in_region;
+
+  Regions = SELECT r
+            FROM BillingRegion:r -(reverse_BILLED_IN:e)- Transaction:t
+                                 -(reverse_MADE:e2)- Card:c
+            ACCUM r.@cards_in_region += c.card_id;
+
+  Regions = SELECT r FROM Regions:r
+            WHERE r.@cards_in_region.size() >= 2 AND r.@cards_in_region.size() <= max_cards;
+
+  Pairs =
+    SELECT c2
+    FROM Regions:r -(reverse_BILLED_IN:e1)- Transaction:t1
+                   -(reverse_MADE:e2)- Card:c1,
+         r -(reverse_BILLED_IN:e3)- Transaction:t2
+           -(reverse_MADE:e4)- Card:c2
+    WHERE c1.card_id < c2.card_id
+    ACCUM INSERT INTO SHARES_ADDRESS VALUES (c1, c2, r.region_code);
+  PRINT "build_shares_address done";
+}

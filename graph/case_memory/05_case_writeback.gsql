@@ -1,0 +1,106 @@
+// ============================================================================
+// Case write-back job — the "each case also written into the graph" item,
+// and the case-memory write path (SIMILAR_TO / SIMILAR_CASE edges).
+//
+// This is what the write_case_to_graph MCP tool calls. Upserts an
+// InvestigationCase vertex with all evidence/policy/typology/action edges,
+// links it to the closed cases it was retrieved as similar to (agent-side
+// retrieval + embedding re-rank happens in Python before this call --
+// see /mcp/tools.py), and additionally auto-discovers SIMILAR_CASE links
+// to other InvestigationCase vertices that share a connected card --
+// structural graph-native memory on top of the explicit retrieval.
+//
+// TUPLE types must be declared before the query in the same gsql session/
+// script (GSQL requires TYPEDEF TUPLE at global scope, not inside a query).
+//
+// NOTE: written without a live compiler available (local TigerGraph CE is
+// blocked on a free license; Savanna signup pending) -- see
+// graph/README.md "Known validation gap". Syntax follows GSQL 4.x
+// documented patterns as closely as possible; first thing to do once an
+// instance is live is `gsql graph/case_memory/05_case_writeback.gsql` and
+// fix any compile errors against the real parser.
+// ============================================================================
+
+TYPEDEF TUPLE<claim STRING, source STRING, ref STRING, entity_ids_str STRING> EvidenceTuple
+
+TYPEDEF TUPLE<action_name STRING, phase STRING, route STRING, reason STRING> ActionTuple
+
+USE GRAPH FraudGraph
+
+CREATE OR REPLACE QUERY write_case_to_graph(
+  STRING graph_case_id,
+  STRING case_pack_id,
+  STRING status,
+  STRING verdict,
+  DOUBLE fraud_probability,
+  STRING pattern,
+  STRING pattern_description,
+  DOUBLE exposure_usd,
+  STRING first_suspicious_txn_id,
+  STRING summary,
+  STRING stop_reason,
+  STRING customer_id_involved,
+  SET<STRING> affected_txn_ids,
+  SET<STRING> connected_card_ids,
+  SET<STRING> similar_prior_case_ids,
+  LIST<EvidenceTuple> evidence_list,
+  LIST<ActionTuple> action_list,
+  SET<STRING> cited_clause_ids
+) FOR GRAPH FraudGraph SYNTAX v2 {
+
+  SumAccum<int> @@similar_to_edges_created;
+
+  INSERT INTO InvestigationCase VALUES (
+    graph_case_id, case_pack_id, status, verdict, fraud_probability, pattern,
+    pattern_description, exposure_usd, first_suspicious_txn_id, summary,
+    stop_reason, now(), now()
+  );
+
+  FOREACH txn_id IN affected_txn_ids DO
+    INSERT INTO CASE_INVOLVES_TXN VALUES (graph_case_id, txn_id, "affected");
+  END;
+
+  FOREACH card_id IN connected_card_ids DO
+    INSERT INTO CASE_INVOLVES_CARD VALUES (graph_case_id, card_id);
+  END;
+
+  IF customer_id_involved != "" THEN
+    INSERT INTO CASE_INVOLVES_CUSTOMER VALUES (graph_case_id, customer_id_involved);
+  END;
+
+  FOREACH ev IN evidence_list DO
+    STRING evidence_id = graph_case_id + "|" + ev.ref;
+    INSERT INTO Evidence VALUES (evidence_id, ev.claim, ev.source, ev.ref, SPLIT(ev.entity_ids_str, "|"));
+    INSERT INTO HAS_EVIDENCE VALUES (graph_case_id, evidence_id);
+  END;
+
+  FOREACH act IN action_list DO
+    INSERT INTO RECOMMENDS VALUES (graph_case_id, act.action_name, act.phase, act.route, act.reason);
+  END;
+
+  FOREACH clause_id IN cited_clause_ids DO
+    INSERT INTO CITES VALUES (graph_case_id, clause_id);
+  END;
+
+  IF pattern != "" AND pattern != "none" THEN
+    INSERT INTO MATCHES VALUES (graph_case_id, pattern);
+  END;
+
+  // Case memory (explicit): agent-retrieved similar closed cases
+  FOREACH cc_id IN similar_prior_case_ids DO
+    INSERT INTO SIMILAR_TO VALUES (graph_case_id, cc_id, 1.0, "retrieved as prior similar case");
+    @@similar_to_edges_created += 1;
+  END;
+
+  // Case memory (structural, automatic): other open InvestigationCases that
+  // share a connected card with this one -- the graph finding its own memory.
+  IF connected_card_ids.size() > 0 THEN
+    OtherCases = SELECT oc
+                 FROM InvestigationCase:oc -(reverse_CASE_INVOLVES_CARD:e)- Card:c
+                 WHERE c.card_id IN connected_card_ids AND oc.graph_case_id != graph_case_id;
+    OtherCases = SELECT oc FROM OtherCases:oc
+                 ACCUM INSERT INTO SIMILAR_CASE VALUES (graph_case_id, oc.graph_case_id, 0.7, "shares a connected card");
+  END;
+
+  PRINT graph_case_id AS graph_case_id, true AS written, @@similar_to_edges_created AS similar_to_edges_created;
+}
