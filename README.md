@@ -73,12 +73,12 @@ run_benchmark.py  Runs the agent over case_pack.csv, writes cases/*.json
 - **TF-IDF similar-case retrieval, not TigerGraph's native vector search** — a `pyTigerGraph`/GSQL `VERTEX<T>` parameter-encoding issue makes the live call fall back automatically; structural ring retrieval is unaffected.
 - **Evidence and actions aren't separate graph vertices in the live write-back** — this GSQL edition doesn't support `TUPLE`/`JSONARRAY` as query parameter types, which the original per-evidence/per-action vertex design relied on. The case itself, its verdict/pattern, and its memory edges still write correctly.
 
-See `BLOG_POST.md` for the full list and reasoning.
+See `https://team-synergy.hashnode.dev/selection-task-for-the-tigergraph-hacker-house-goa-hackathon-2026` for the full list and reasoning.
 
 ## Team
 
-- P1 (graph & knowledge engineering)
-- P2 (agent & backend engineering)
+- P1 (graph & knowledge engineering) - Akanksha Mishra ([@akankshaa-ai](https://github.com/akankshaa-ai)
+- P2 (agent & backend engineering) - Darshita Lodh ([@darshita-builds](https://github.com/darshita-builds)
 - P3 (UI, GraphRAG docs, demo, final fixes) — Shriya Patil ([@ShriyaP1966](https://github.com/ShriyaP1966))
 
 ## License
