@@ -3,13 +3,30 @@
   "case": {
     "status": "closed_legitimate",
     "verdict": "legitimate",
-    "fraud_probability": 0.171,
+    "fraud_probability": 0.081,
     "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [],
     "first_suspicious_txn_id": "",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00294-K2",
+      "C00426-K2",
+      "C01525-K2",
+      "C02147-K2",
+      "C02181-K2",
+      "C02545-K2",
+      "C04034-K2",
+      "C04386-K1",
+      "C04597-K2",
+      "C05031-K2"
+    ],
+    "connected_device_profiles": [
+      "||mobile|",
+      "SM-G950F Build/NRD90M||chrome 64.0 for android|",
+      "HUAWEI VNS-L31 Build/HUAWEIVNS-L31||chrome 66.0 for android|",
+      "SAMSUNG SM-A310F Build/NRD90M||samsung browser 6.4|",
+      "SM-J510FN||chrome 62.0 for android|"
+    ],
     "exposure_usd": 0.0,
     "evidence": [
       {
@@ -25,6 +42,40 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "27 other card(s) sharing a rare device profile via ||mobile| show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00294-K2",
+          "C00426-K2",
+          "C01525-K2",
+          "C02147-K2",
+          "C02181-K2",
+          "C02545-K2",
+          "C04034-K2",
+          "C04386-K1",
+          "C04597-K2",
+          "C05031-K2",
+          "C05307-K2",
+          "C05381-K2",
+          "C06224-K2",
+          "C06247-K1",
+          "C06630-K2",
+          "C06663-K2",
+          "C06744-K2",
+          "C06906-K1",
+          "C07220-K1",
+          "C07562-K2",
+          "C07602-K1",
+          "C07855-K1",
+          "C07981-K1",
+          "C08391-K2",
+          "C08962-K2",
+          "C09657-K2",
+          "C10114-K1"
+        ]
       },
       {
         "claim": "1 txns in the last hour totaling $51.65, z-score 1.31",
@@ -61,14 +112,26 @@
         "entity_ids": [
           "CC-0997"
         ]
+      },
+      {
+        "claim": "Requested customer_validation: Customer confirms they made this purchase",
+        "source": "customer",
+        "ref": "simulate_response",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007 was reviewed. Most similar prior case: CC-1853 (similarity 0.3823, outcome cleared). Confidence 0.171 (low risk).",
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009 was reviewed. The account is linked to a 51-member cluster with 27 known-fraud members. Most similar prior case: CC-1853 (similarity 0.3823, outcome cleared). Confidence 0.081 (low risk).",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-016"
   },
-  "evidence_requests": [],
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 1,
+      "assumed_response": "Customer confirms they made this purchase"
+    }
+  ],
   "next_best_actions": {
     "initial": [
       {
@@ -79,12 +142,12 @@
     ],
     "final": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
+        "action": "CLOSE_NO_FRAUD",
         "route": "auto",
-        "reason": "R1: single weak signal, verify before any block"
+        "reason": "R3: customer confirmed the transaction"
       }
     ],
-    "what_changed": "nothing"
+    "what_changed": "Confidence before additional evidence was 0.201 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer confirms they made this purchase'), confidence moved to 0.081 (actions: ['CLOSE_NO_FRAUD'])."
   },
   "sar": {
     "file": false,
@@ -94,8 +157,8 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
-  "tool_calls": 9,
-  "tokens": 29,
-  "latency_s": 2.97
+  "stop_reason": "Fraud probability cleared the stopping threshold with multiple independent evidence sources.",
+  "tool_calls": 10,
+  "tokens": 48,
+  "latency_s": 6.2
 }

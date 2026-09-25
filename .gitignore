@@ -25,6 +25,7 @@ Thumbs.db
 # Generated / scratch
 *.log
 _preview_*.png
+FINAL_FIXES_STATUS.md
 
 # Large raw source docs (keep chunks, not necessarily the raw PDFs, out of git)
 docs/policy/raw/*

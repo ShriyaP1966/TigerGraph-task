@@ -1,6 +1,6 @@
 """Proves validate_answer_file.py actually catches what it claims to.
 
-- fixtures/valid_answer_example.json is README1.md's own worked example
+- fixtures/valid_answer_example.json is DATASET_README.md's own worked example
   (HHG-017) copied verbatim — must validate clean, including the real
   cross-checks against case_pack.csv and closed_cases_history.csv.
 - fixtures/invalid_answer_example.json deliberately breaks close to every
@@ -69,7 +69,7 @@ def main() -> int:
         for e in valid_errors:
             print(f"    - {e}")
     else:
-        print("PASS: valid_answer_example.json (README1.md's own HHG-017 example) validates clean.")
+        print("PASS: valid_answer_example.json (DATASET_README.md's own HHG-017 example) validates clean.")
 
     # --- invalid fixture must catch every planted issue ---
     invalid_data = json.loads((FIXTURES / "invalid_answer_example.json").read_text(encoding="utf-8"))

@@ -12,7 +12,7 @@ from contracts.tool_contracts import (
 
 
 class GraphBackend(ABC):
-    # card_id is an optional hint: this dataset's real graph (P1's TigerGraph) is
+    # card_id is an optional hint: this dataset's real graph (TigerGraph) is
     # card-keyed, not customer-keyed, so account_id alone isn't enough to call it. The
     # agent has the real card_id from case_pack.csv for the case's own account; Mock/Local
     # ignore the hint since their own methods are already customer-keyed.

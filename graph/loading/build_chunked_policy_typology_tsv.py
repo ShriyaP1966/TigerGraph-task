@@ -1,4 +1,4 @@
-"""Builds graph/loading/{policy_clauses,typologies}_chunked.tsv from P3's real
+"""Builds graph/loading/{policy_clauses,typologies}_chunked.tsv from the real
 chunked docs (docs/policy/chunks/{policy_clauses,typologies}.json), matching the
 existing load_policy_typology_action job's expected columns (clause_id/text,
 typology_id/description). These are additive: their IDs (POL-*/TYP-*) are a

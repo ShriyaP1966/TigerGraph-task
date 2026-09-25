@@ -4,7 +4,7 @@ This folder was the input to `scripts/chunk_policy_docs.py`. The real
 HHGOA fraud policy, the five known fraud typologies, and regulatory
 reference material (5 FinCEN documents) were extracted, chunked, and
 committed to `docs/policy/chunks/` — see `PERSON3_PROGRESS.md` (Phase 1)
-for exactly what was fetched and why some README1.md-linked sources
+for exactly what was fetched and why some DATASET_README.md-linked sources
 (FFIEC, FATF, OFAC's SDN list) weren't. No `SAMPLE_*` placeholder content
 ships in this repo.
 

@@ -1,6 +1,6 @@
 """Confidence / uncertainty view: the confidence_score and its
 confidence_breakdown components, exactly as the schema defines them — no new
-scoring formula, just a clear rendering of what P2's agent already computed.
+scoring formula, just a clear rendering of what the agent already computed.
 
 "Sufficient evidence" is read off the case's own `status` field (schema
 enum: open/gathering_evidence/pending_customer_response mean more evidence

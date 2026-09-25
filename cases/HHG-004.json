@@ -3,15 +3,32 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.6093,
+    "fraud_probability": 0.6393,
     "pattern": "card_not_present_fraud",
     "pattern_description": "",
     "affected_txn_ids": [
       "3583227"
     ],
     "first_suspicious_txn_id": "3583227",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00294-K2",
+      "C00373-K1",
+      "C00426-K2",
+      "C00466-K1",
+      "C00583-K1",
+      "C00854-K2",
+      "C01002-K1",
+      "C01109-K2",
+      "C01521-K2",
+      "C01525-K2"
+    ],
+    "connected_device_profiles": [
+      "||chrome|",
+      "Z9 PLUS Build/NRD90M||chrome 63.0 for android|",
+      "8050G Build/LMY47I||chrome 65.0 for android|",
+      "SM-G900M Build/LRX21T||chrome 65.0 for android|",
+      "LG-K410 Build/LRX22G||chrome 63.0 for android|"
+    ],
     "exposure_usd": 128.33,
     "evidence": [
       {
@@ -27,6 +44,42 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "29 other card(s) sharing a rare device profile via ||chrome| show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00294-K2",
+          "C00373-K1",
+          "C00426-K2",
+          "C00466-K1",
+          "C00583-K1",
+          "C00854-K2",
+          "C01002-K1",
+          "C01109-K2",
+          "C01521-K2",
+          "C01525-K2",
+          "C01656-K1",
+          "C01810-K1",
+          "C01890-K1",
+          "C02031-K1",
+          "C02147-K2",
+          "C02170-K1",
+          "C02266-K2",
+          "C02354-K2",
+          "C02456-K1",
+          "C02545-K2",
+          "C02618-K2",
+          "C02639-K1",
+          "C02702-K2",
+          "C02715-K1",
+          "C02782-K2",
+          "C02851-K2",
+          "C03066-K1",
+          "C03095-K2",
+          "C03218-K2"
+        ]
       },
       {
         "claim": "1 txns in the last hour totaling $18.09, z-score 3.45",
@@ -76,7 +129,7 @@
       "CC-3778",
       "CC-2121"
     ],
-    "summary": "Investigation of HHG-004 found pattern=card_not_present_fraud with confidence 0.6093 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.6093) alone would suggest.",
+    "summary": "Investigation of HHG-004 found pattern=card_not_present_fraud with confidence 0.6393 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.6393) alone would suggest.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-004"
   },
@@ -90,9 +143,9 @@
   "next_best_actions": {
     "initial": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
+        "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "R1: single weak signal, verify before any block"
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
       }
     ],
     "final": [
@@ -107,7 +160,7 @@
         "reason": "R2: customer denial confirms a case"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.4293 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.6093 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
+    "what_changed": "Confidence before additional evidence was 0.4593 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.6393 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
     "file": false,
@@ -120,5 +173,5 @@
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 10,
   "tokens": 46,
-  "latency_s": 4.12
+  "latency_s": 7.54
 }

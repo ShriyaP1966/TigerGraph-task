@@ -1,6 +1,6 @@
 """
-Phase 1 tool (owned by P3): turns raw policy / fraud-typology / regulatory
-reference documents into clean, stably-ID'd chunks.
+Turns raw policy / fraud-typology / regulatory reference documents into clean,
+stably-ID'd chunks.
 
 Input:  docs/policy/raw/{policy,typology,regulatory}/*.md (or .txt)
         Each `##` heading starts a new chunk; everything until the next `##`
@@ -9,8 +9,8 @@ Input:  docs/policy/raw/{policy,typology,regulatory}/*.md (or .txt)
 Output: docs/policy/chunks/{policy_clauses,typologies,regulatory_references}.json
         Each entry: {id, title, text, source_file}
 
-This is what P1 loads as PolicyClause / FraudTypology vertices, and what the
-agent (P2) cites by ID in explanations (e.g. "per POL-004").
+Loaded as PolicyClause / FraudTypology graph vertices, and cited by ID in
+agent explanations (e.g. "per POL-004").
 
 IDs are kept stable across re-runs via docs/policy/chunks/_id_map.json,
 keyed on (category, title) — so re-chunking after editing a doc does not

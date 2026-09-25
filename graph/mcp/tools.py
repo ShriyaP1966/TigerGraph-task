@@ -336,6 +336,47 @@ def find_fraud_ring(
     }
 
 
+def device_ring(card_id: str, max_cards: int = 60) -> dict:
+    """Cardinality-capped alternative to find_fraud_ring's SHARES_DEVICE walk.
+    find_fraud_ring's 1-hop walk over SHARES_DEVICE has no per-device fanout
+    cap (unlike SHARES_EMAIL/SHARES_ADDRESS), so a common device fingerprint
+    (e.g. a widely-used Android/Chrome combination) returns thousands of
+    unrelated cards - noise, not a ring. This isolates only the seed card's
+    device profile(s) shared by a *small* (2..max_cards) number of distinct
+    cards, which is the actual "shared origin" signal R6 and the dataset
+    README's "devices connect people" note mean."""
+
+    if not _live_mode():
+        return {"rare_shared_devices": [], "cards": [], "cluster_size": 0}
+
+    conn = _get_connection()
+
+    result = conn.runInstalledQuery(
+        "device_ring",
+        params={"seed_card": (card_id, "Card"), "max_cards": max_cards},
+    )
+
+    rare_devices = (
+        result[0].get("rare_shared_devices", [])
+        if result
+        else []
+    )
+
+    member_rows = (
+        result[1].get("connected_cards", [])
+        if len(result) > 1
+        else []
+    )
+
+    cards = [row.get("v_id") for row in member_rows if row.get("v_id")]
+
+    return {
+        "rare_shared_devices": rare_devices,
+        "cards": cards,
+        "cluster_size": len(cards) + (1 if cards else 0),
+    }
+
+
 # ============================================================================
 # 3. get_transaction_velocity
 # ============================================================================

@@ -3,15 +3,32 @@
   "case": {
     "status": "escalated",
     "verdict": "uncertain",
-    "fraud_probability": 0.381,
+    "fraud_probability": 0.541,
     "pattern": "card_not_present_fraud",
     "pattern_description": "",
     "affected_txn_ids": [
       "3450629"
     ],
     "first_suspicious_txn_id": "3450629",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00197-K1",
+      "C00329-K2",
+      "C00580-K1",
+      "C00750-K2",
+      "C00773-K2",
+      "C01109-K2",
+      "C01138-K2",
+      "C01154-K1",
+      "C01155-K2",
+      "C01347-K2"
+    ],
+    "connected_device_profiles": [
+      "Windows|Windows 10|chrome 60.0|1600x900",
+      "MacOS|Mac OS X 10_13_2|safari generic|2560x1440",
+      "MacOS|Mac OS X 10_13_4|chrome 65.0|2560x1600",
+      "MacOS|Mac OS X 10_12_6|chrome 63.0|2880x1800",
+      "MacOS|Mac|chrome 62.0|1920x1080"
+    ],
     "exposure_usd": 100.09,
     "evidence": [
       {
@@ -27,6 +44,42 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "29 other card(s) sharing a rare device profile via Windows|Windows 10|chrome 60.0|1600x900 show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00197-K1",
+          "C00329-K2",
+          "C00580-K1",
+          "C00750-K2",
+          "C00773-K2",
+          "C01109-K2",
+          "C01138-K2",
+          "C01154-K1",
+          "C01155-K2",
+          "C01347-K2",
+          "C01563-K1",
+          "C01755-K2",
+          "C01855-K2",
+          "C01983-K1",
+          "C02354-K2",
+          "C02480-K1",
+          "C02695-K1",
+          "C02716-K2",
+          "C03019-K2",
+          "C03040-K2",
+          "C03070-K1",
+          "C03218-K2",
+          "C03405-K2",
+          "C03411-K2",
+          "C03474-K1",
+          "C03778-K1",
+          "C03992-K2",
+          "C04172-K2",
+          "C04361-K2"
+        ]
       },
       {
         "claim": "2 txns in the last hour totaling $399.96, z-score -0.31",
@@ -63,14 +116,26 @@
         "entity_ids": [
           "CC-1211"
         ]
+      },
+      {
+        "claim": "Requested step_up_auth: Step-up authentication failed, likely not the account owner",
+        "source": "external",
+        "ref": "simulate_response",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "Investigation of HHG-017 found pattern=card_not_present_fraud with confidence 0.381 (low risk), based on EV-001, EV-002, EV-003, EV-004.",
+    "summary": "Investigation of HHG-017 found pattern=card_not_present_fraud with confidence 0.541 (medium risk), based on EV-001, EV-002, EV-003, EV-004.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-017"
   },
-  "evidence_requests": [],
+  "evidence_requests": [
+    {
+      "type": "step_up_auth",
+      "asked_after_step": 1,
+      "assumed_response": "Step-up authentication failed, likely not the account owner"
+    }
+  ],
   "next_best_actions": {
     "initial": [
       {
@@ -86,7 +151,7 @@
         "reason": "moderate signal, not enough to act - monitor while evidence accrues"
       }
     ],
-    "what_changed": "nothing"
+    "what_changed": "Confidence before additional evidence was 0.411 (actions: ['MONITOR_CARD']). After step_up_auth response ('Step-up authentication failed, likely not the account owner'), confidence moved to 0.541 (actions: ['MONITOR_CARD'])."
   },
   "sar": {
     "file": false,
@@ -96,8 +161,8 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
-  "tool_calls": 9,
+  "stop_reason": "A simulated verification response settled the question.",
+  "tool_calls": 10,
   "tokens": 20,
-  "latency_s": 4.6
+  "latency_s": 8.93
 }

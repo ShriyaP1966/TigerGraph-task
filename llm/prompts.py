@@ -6,10 +6,23 @@ import re
 
 
 def build_context(evidence: list[dict], ring: dict, velocity: dict, similar_cases: list[dict], pattern: str, confidence: dict, exposure_usd: float = 0) -> dict:
+    # ring["size"] is uncapped (see graph/queries/device_ring.gsql) - a common device/region can
+    # inflate it into the thousands, which is meaningless in prose ("linked to a 7981-member
+    # cluster"). member_card_ids is the cardinality-capped, real signal; when it's empty,
+    # only trust the raw size if it's small enough to plausibly be a real ring rather than
+    # noise from a common shared attribute.
+    _members = ring.get("member_card_ids", [])
+    _raw_size = ring.get("size", 1)
+    ring_size = (len(_members) + 1) if _members else (_raw_size if _raw_size <= 100 else 1)
+    # known_fraud_count is raw/uncapped too (can be in the thousands, same reason as
+    # ring_size above) - fraud_confirmed_member_cards is the real, evidence-filtered count
+    # (see backends/tigergraph.py::_filter_fraud_confirmed), always <= ring_size by
+    # construction so "N related, M confirmed fraud" stays internally consistent in prose.
+    ring_known_fraud = len(ring.get("fraud_confirmed_member_cards", []))
     return {
         "evidence": [{"id": e["evidence_id"], "claim": e["description"]} for e in evidence],
-        "ring_size": ring.get("size", 1),
-        "ring_known_fraud": ring.get("known_fraud_count", 0),
+        "ring_size": ring_size,
+        "ring_known_fraud": ring_known_fraud,
         "velocity_count": velocity.get("count", 0),
         "velocity_z_score": round(velocity.get("z_score", 0), 2),
         "similar_cases": [{"case_id": c["case_id"], "similarity": c["similarity"], "outcome": c["outcome"]} for c in similar_cases],

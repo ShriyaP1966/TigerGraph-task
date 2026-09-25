@@ -1,6 +1,6 @@
-"""Stable interface for P3's Streamlit app. Signatures frozen: run_case, get_case,
+"""Stable interface for the Streamlit app. Signatures frozen: run_case, get_case,
 list_pending_approvals, approve. ui.lib.data.load_cases() and mock_actions.py are
-the swap points on P3's side.
+the swap points on the UI side.
 """
 import csv
 import json
@@ -103,8 +103,8 @@ def _seed_ledger_if_empty(case_record) -> list[dict]:
     files loaded straight from cases/*.json (this environment's normal path, since
     the ledger is a gitignored local runtime artifact) never went through that, so
     list_for_case() comes back empty even though the case already has a real,
-    persisted next_best_actions.final. Replay it through the same policy gate P2's
-    live path uses - same route/auto-execute rules, no LLM call, nothing invented -
+    persisted next_best_actions.final. Replay it through the same policy gate the
+    agent's live path uses - same route/auto-execute rules, no LLM call, nothing invented -
     so the approval queue and decision log are real and clicking Approve/Reject
     actually works, instead of silently staying empty forever for every reloaded
     case."""
@@ -168,6 +168,6 @@ def _minimal_ui_dict(case_record) -> dict:
 
 
 def list_case_ids() -> list[str]:
-    """All committed answer files' case_ids (cases/*.json), sorted - what P3's
+    """All committed answer files' case_ids (cases/*.json), sorted - what the
     dashboard now loads by default instead of the 2-case mock contract."""
     return sorted(p.stem for p in CASES_DIR.glob("*.json")) if CASES_DIR.exists() else []

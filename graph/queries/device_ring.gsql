@@ -1,0 +1,41 @@
+// device_ring — for a seed card's own device profile(s), find every other
+// card sharing a *rare* one (touched by between 2 and max_cards distinct
+// cards). Skips generic/common device fingerprints the same way
+// build_shares_email/build_shares_address skip common domains/regions.
+//
+// Why this exists: SHARES_DEVICE was assumed "naturally high-cardinality,
+// no cap needed" (see graph/algorithms/03_derived_edges.gsql), but after
+// re-running build_shares_device() against the full transaction data, the
+// graph went from 63,973 to 2,610,426 edges - some device fingerprints
+// (e.g. a common Android/Chrome combination) are shared by hundreds or
+// thousands of unrelated cards. find_fraud_ring's uncapped 1-hop walk over
+// SHARES_DEVICE returns thousands of cards for such a seed - noise, not a
+// ring. This query isolates the case that actually matters: a specific
+// device profile shared narrowly (few cards), which is what R6 ("shared
+// origin") and the dataset README's "devices connect people" note mean.
+//
+// Verified live (2026-09-24) against HHG-014 (card C13487-K1, device
+// SM-G935F Build/NRD90M|Android 7.0|chrome 62.0 for android|1920x1080):
+// correctly returns 51 connected cards for the one rare device, at
+// max_cards=60 (all-time fanout for that device is 52 cards total).
+
+CREATE OR REPLACE QUERY device_ring(VERTEX<Card> seed_card, INT max_cards=60) FOR GRAPH FraudGraph SYNTAX v2 {
+  SetAccum<VERTEX<Card>> @cardsOnDevice;
+  SetAccum<STRING> @@rareDevices;
+
+  Start = {seed_card};
+  SeedDevices = SELECT d FROM Start -(MADE>)- Transaction:t -(FROM_DEVICE>)- DeviceProfile:d;
+
+  Fanout = SELECT d FROM SeedDevices:d -(<FROM_DEVICE)- Transaction:t2 -(<MADE)- Card:c
+           ACCUM d.@cardsOnDevice += c
+           POST-ACCUM
+             IF d.@cardsOnDevice.size() >= 2 AND d.@cardsOnDevice.size() <= max_cards THEN
+               @@rareDevices += d.device_id
+             END;
+
+  Members = SELECT c FROM SeedDevices:d -(<FROM_DEVICE)- Transaction:t2 -(<MADE)- Card:c
+            WHERE @@rareDevices.contains(d.device_id) AND c != seed_card;
+
+  PRINT @@rareDevices AS rare_shared_devices;
+  PRINT Members AS connected_cards;
+}

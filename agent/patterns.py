@@ -50,27 +50,52 @@ def match_out_of_region(txns: list, flagged_id: str) -> float:
     return 0.85 if flagged.addr1 != home_region else 0.0
 
 
-def match_account_takeover(txns: list, flagged_id: str, ring: dict) -> float:
+def match_account_takeover(txns: list, flagged_id: str) -> float:
+    # No ring signal here (deliberately - see choose_pattern): account_takeover is a
+    # single-account signal (mixed channel + a device this account hasn't used before). A
+    # shared-device-with-other-fraud signal is a *different* claim (coordinated abuse across
+    # customers) and gets its own path to "undocumented" below, so the two don't collapse
+    # into one score and mislabel a ring-driven case as account_takeover.
     channels = {t.channel for t in txns}
     mixed_channel = len(channels) > 1
     flagged = next((t for t in txns if t.txn_id == flagged_id), None)
     anomaly = flagged is not None and flagged.device_new
-    ring_signal = ring.get("known_fraud_count", 0) > 0
-    score = 0.3 * mixed_channel + 0.3 * bool(anomaly) + 0.4 * ring_signal
+    score = 0.3 * mixed_channel + 0.3 * bool(anomaly)
     return score if score >= 0.3 else 0.0
 
 
-def choose_pattern(txns: list, flagged_id: str, ring: dict) -> tuple[str, float]:
+def choose_pattern(txns: list, flagged_id: str, ring: dict, trigger_type: str | None = None) -> tuple[str, float]:
     scores = {
         "card_testing": match_card_testing(txns, flagged_id),
         "card_not_present_new_device": match_new_device(txns, flagged_id),
         "card_not_present_fraud": match_card_not_present(txns, flagged_id),
         "out_of_region_use": match_out_of_region(txns, flagged_id),
-        "account_takeover": match_account_takeover(txns, flagged_id, ring),
+        "account_takeover": match_account_takeover(txns, flagged_id),
     }
     best_pattern, best_score = max(scores.items(), key=lambda kv: kv[1])
+
+    # R9: coordinated abuse fitting no known pattern. fraud_confirmed_member_cards is the
+    # cardinality-capped, real-evidence-filtered ring signal (see
+    # backends/tigergraph.py::_filter_fraud_confirmed) - several OTHER cards sharing a rare
+    # device (now <=~15 cards, not just <=60) that independently show real fraud (a
+    # confirmed closed case only - not an elevated risk_score, which DATASET_README.md notes
+    # is common rather than rare in this dataset).
+    #
+    # Restricted to analyst_request-triggered cases (e.g. HHG-014's "several cards this
+    # month show purchases from the same unusual device profile" ask): a shared device is
+    # measuring a dataset-wide correlation (device-ring fraud-confirmed fractions run
+    # 34-80% across nearly the whole 20-case pack - not case-specific signal), so it's only
+    # trustworthy enough to DRIVE the pattern/verdict when the trigger itself is explicitly
+    # asking "is this device shared with other fraud". For customer_report/risk_score
+    # triggers it stays visible as supporting evidence (gather_graph_evidence still cites
+    # it) but doesn't compete for the pattern here.
+    if trigger_type == "analyst_request":
+        fraud_confirmed = len(ring.get("fraud_confirmed_member_cards", []))
+        if fraud_confirmed > 0:
+            undocumented_score = min(0.5 + 0.05 * fraud_confirmed, 0.95)
+            if undocumented_score > best_score:
+                return "undocumented", undocumented_score
+
     if best_score < 0.3:
-        if ring.get("known_fraud_count", 0) > 0:
-            return "undocumented", 0.4
         return "none", 0.0
     return best_pattern, best_score

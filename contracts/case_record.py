@@ -1,4 +1,4 @@
-"""Pydantic models for the README1.md Answer Format — the graded submission shape.
+"""Pydantic models for the DATASET_README.md Answer Format — the graded submission shape.
 This is the core model the agent builds and run_benchmark.py writes to cases/*.json.
 Field names/enums are copied straight from the README, not invented.
 """
@@ -105,8 +105,8 @@ class CaseRecord(BaseModel):
 
 
 def validate_case_record(cr: CaseRecord) -> list[str]:
-    """Cross-field checks from README1.md's Answer Format, reusing P3's validator so
-    we don't maintain two copies of the same rules."""
+    """Cross-field checks from DATASET_README.md's Answer Format, reusing the answer-file
+    validator so this doesn't maintain two copies of the same rules."""
     import sys
     from pathlib import Path
 

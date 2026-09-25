@@ -12,3 +12,6 @@ scikit-learn
 pytest
 pyyaml
 jsonschema
+pyTigerGraph
+streamlit>=1.38
+streamlit-agraph>=0.0.45

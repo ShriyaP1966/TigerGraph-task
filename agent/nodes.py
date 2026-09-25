@@ -14,7 +14,7 @@ from contracts.case_record import ActionItem, Case, CaseRecord, Evidence, Eviden
 from llm.client import complete
 from llm.prompts import build_context, explanation_prompt, sar_prompt, validate_citations
 from policy.gate import approval_gate as gate_fn
-from scoring.confidence import action_band, apply_response_override, compute_confidence
+from scoring.confidence import apply_response_override, compute_confidence
 
 _AGENT_CFG = yaml.safe_load((Path(__file__).resolve().parent.parent / "config.yaml").read_text())["agent"]
 
@@ -80,12 +80,28 @@ def gather_graph_evidence(state: dict) -> dict:
     evidence = list(state["evidence"])
     evidence, _ = _add_evidence(state, "transaction_history", f"{len(sg.transactions)} transactions in the account's recent window", "get_account_subgraph")
     state_copy = {**state, "evidence": evidence}
-    if ring.size > 1:
+    # ring.size/ring.members/ring.known_fraud_count are raw/uncapped (a common device/region
+    # can inflate them into the thousands - see graph/queries/device_ring.gsql) so they're not usable
+    # as evidence claims or entity_ids on their own. member_card_ids is cardinality-capped but
+    # still just "shares a device" - R6 needs cards that actually show fraud, which is
+    # fraud_confirmed_member_cards (see backends/tigergraph.py::_filter_fraud_confirmed). Cite
+    # that as the evidentiary claim; mention the broader device-sharing count only for context.
+    if ring.fraud_confirmed_member_cards:
+        device_note = f" via {ring.rare_shared_devices[0]}" if ring.rare_shared_devices else ""
         evidence, _ = _add_evidence(
             state_copy, "graph_pattern",
-            f"Account linked to a {ring.size}-member cluster via {', '.join(ring.shared_via) or 'shared entity'}, {ring.known_fraud_count} known-fraud members",
-            "find_fraud_ring", ring.members,
+            f"{len(ring.fraud_confirmed_member_cards)} other card(s) sharing a rare device profile{device_note} show real fraud evidence "
+            f"(a confirmed_fraud closed case on record), out of {len(ring.member_card_ids)} total cards on that device",
+            "device_ring", ring.fraud_confirmed_member_cards,
         )
+        state_copy = {**state_copy, "evidence": evidence}
+    elif ring.member_card_ids:
+        evidence, _ = _add_evidence(
+            state_copy, "graph_pattern",
+            f"{len(ring.member_card_ids)} other card(s) share a rare device profile with this account, but none show independent fraud evidence",
+            "device_ring",
+        )
+        state_copy = {**state_copy, "evidence": evidence}
         state_copy = {**state_copy, "evidence": evidence}
     evidence, _ = _add_evidence(state_copy, "transaction_history", f"{vel1.count} txns in the last hour totaling ${vel1.sum_amount:.2f}, z-score {vel1.z_score:.2f}", "get_transaction_velocity(1h)")
     state_copy = {**state_copy, "evidence": evidence}
@@ -115,7 +131,7 @@ def gather_graphrag_context(state: dict) -> dict:
     # validation checks against. Previously this returned all 5, so the LLM could validly
     # cite a 4th/5th-ranked case ID with no backing entry in the persisted evidence list -
     # not a hallucination by the validator's own contract, but a real traceability gap
-    # against README1.md's "the evidence list carries the detail."
+    # against DATASET_README.md's "the evidence list carries the detail."
     top = sim.results[:3]
     evidence = list(state["evidence"])
     state_copy = {**state, "evidence": evidence}
@@ -132,9 +148,70 @@ def gather_graphrag_context(state: dict) -> dict:
     }
 
 
+def _matches_recurring_pattern(subgraph_txns: list, flagged: dict) -> bool:
+    """R7: does the disputed transaction match this customer's OWN recurring spend pattern -
+    same product code, amount within 15%, appearing in at least two other distinct months
+    besides the flagged one? A customer disputing what's plainly their own recurring charge
+    (a subscription, a regular bill) isn't grounds to block the card outright - verify and
+    warn instead (see agent/rules.py::recommend_actions' R7 branch)."""
+    if not flagged or not flagged.get("product_cd") or not flagged.get("amount"):
+        return False
+    amount = flagged["amount"]
+    flagged_id = flagged.get("txn_id")
+    similar = [
+        t for t in subgraph_txns
+        if t.txn_id != flagged_id and t.product_cd == flagged["product_cd"] and abs(t.amount - amount) <= amount * 0.15
+    ]
+    if len(similar) < 2:
+        return False
+    months = set()
+    for t in similar:
+        ts = t.ts.replace("Z", "+00:00") if ("Z" in t.ts or "+" in t.ts) else t.ts
+        months.add(datetime.fromisoformat(ts).strftime("%Y-%m"))
+    return len(months) >= 2
+
+
+def _build_case_facts(state: dict) -> dict:
+    """Shared by assess_patterns_and_risk (decisiveness gate) and request_more_evidence
+    (simulate_response's input) so the two never compute this from different data."""
+    flagged = state.get("flagged_txn") or {}
+    flagged_id = state.get("flagged_txn_id")
+    subgraph_txns = state.get("subgraph_txns", [])
+    other_amounts = sorted(t.amount for t in subgraph_txns if t.txn_id != flagged_id)
+    typical_amount = other_amounts[len(other_amounts) // 2] if other_amounts else 0  # median, robust to outliers
+    history_regions = [t.addr1 for t in subgraph_txns if t.addr1 and t.txn_id != flagged_id]
+    home_region = max(set(history_regions), key=history_regions.count) if history_regions else None
+    region_new = bool(home_region and flagged.get("addr1") and flagged["addr1"] != home_region)
+    return {
+        "trigger_type": state["trigger_type"],
+        "device_new": flagged.get("device_new"),
+        "region_new": region_new,
+        "velocity_z_score": (state.get("velocity_48h") or {}).get("z_score"),
+        "flagged_amount": flagged.get("amount"),
+        "typical_amount": typical_amount,
+        "risk_score": flagged.get("risk_score"),
+    }
+
+
+def _out_of_character_count(case_facts: dict) -> int:
+    """How many of this transaction's own facts look out of character for this customer -
+    new device, new region, a velocity spike, or an amount well above their typical spend.
+    0 -> clearly matches history, >=2 -> clearly doesn't; ==1 is a genuine single-signal
+    case, not decisive enough to force a verdict on its own."""
+    z = case_facts.get("velocity_z_score") or 0
+    amount = case_facts.get("flagged_amount") or 0
+    typical = case_facts.get("typical_amount") or 0
+    return sum([
+        bool(case_facts.get("device_new")),
+        bool(case_facts.get("region_new")),
+        z > 2,
+        typical > 0 and amount > typical * 2,
+    ])
+
+
 def assess_patterns_and_risk(state: dict) -> dict:
     txns = state["subgraph_txns"]
-    pattern, strength = choose_pattern(txns, state["flagged_txn_id"], state["ring"])
+    pattern, strength = choose_pattern(txns, state["flagged_txn_id"], state["ring"], state["trigger_type"])
 
     flagged = state.get("flagged_txn") or {}
     bank_risk = flagged.get("risk_score")
@@ -149,7 +226,12 @@ def assess_patterns_and_risk(state: dict) -> dict:
     evidence_types_present = {e["type"] for e in state["evidence"]}
     coverage = min(len(evidence_types_present) / 5, 1.0)
 
-    signal_count = int(state["ring"]["size"] > 1) + int(bank_risk > 0.5) + int(strength > 0.3)
+    # ring["size"] is uncapped (a common device/region can inflate it into the thousands -
+    # see graph/queries/device_ring.gsql), and merely sharing a rare device isn't a fraud signal on
+    # its own either - fraud_confirmed_member_cards is the cardinality-capped signal already
+    # filtered to cards with real fraud evidence (see backends/tigergraph.py).
+    real_ring_signal = len(state["ring"].get("fraud_confirmed_member_cards", [])) >= 1
+    signal_count = int(real_ring_signal) + int(bank_risk > 0.5) + int(strength > 0.3)
 
     # bank_risk/typology_match/similarity always reflect genuine evidence, never the
     # evidence-request response - that's applied as a separate, documented override on
@@ -163,21 +245,66 @@ def assess_patterns_and_risk(state: dict) -> dict:
         confidence = apply_response_override(confidence, last_request_type, response_indicates_fraud(response))
     score = confidence["score"]
 
-    # R2/R3: a direct customer confirm/deny settles the verdict outright, not just a
-    # confidence nudge - otherwise the case can end up recommending CLOSE_NO_FRAUD while
-    # still reporting verdict=uncertain, which also violates the Answer Format's own rule
-    # that a legitimate verdict must have empty affected_txn_ids/zero exposure
+    # R2/R3: a direct customer confirm/deny always settles the verdict outright - this was
+    # always unconditional (not gated on this transaction's own facts), and stays that way:
+    # for customer_report/risk_score the response text is now decisive/fact-based (see
+    # simulate_response), and for analyst_request it's the ring-aware blend (ring_score,
+    # gated to analyst_request in simulate_response) that drives the lean - either way, a
+    # direct customer answer is the strongest evidence the policy defines and settles it.
+    case_facts = _build_case_facts(state)
     if response and last_request_type == "customer_validation":
+        verdict = "fraud" if response_indicates_fraud(response) else "legitimate"
+    # step_up_auth's risk_score equivalent (new - step_up_auth was never decisive before):
+    # a clean pass (0 out-of-character signals) or a clean fail (>=2) settles it; exactly 1
+    # signal is a genuine single-signal case, not decisive enough on its own - falls through
+    # to the score bands below instead of being forced (this is the ~3-5-case uncertain
+    # bucket the calibration target asks for).
+    elif response and last_request_type == "step_up_auth" and state["trigger_type"] == "risk_score" and _out_of_character_count(case_facts) != 1:
         verdict = "fraud" if response_indicates_fraud(response) else "legitimate"
     else:
         verdict = "fraud" if score >= 0.70 else ("legitimate" if score <= 0.20 else "uncertain")
+        # R6/R9: several OTHER cards sharing a rare device that independently show real fraud
+        # evidence is itself strong, structural evidence - settled outright the same way
+        # R2/R3's direct customer response is, rather than stuck "uncertain" just because
+        # this transaction's own bank risk_score is low (bank_risk_score is only 30% of the
+        # weighted confidence formula, so ring evidence alone can't cross 0.70 there).
+        #
+        # Also requires an elevated own_signal (bank risk_score or a new device): ring
+        # evidence is common enough across the case pack that using it alone would push most
+        # cases to "fraud" regardless of whether this transaction shows anything itself -
+        # the ring corroborates the case's own signal, it doesn't substitute for it. And
+        # gated to analyst_request (belt-and-suspenders with choose_pattern, which already
+        # only returns "undocumented" for that trigger) - ring evidence drives verdict/SAR
+        # only when the trigger is explicitly an analyst asking about shared-device activity.
+        ring_fraud_confirmed = len(state["ring"].get("fraud_confirmed_member_cards", []))
+        own_signal = bank_risk >= 0.7 or bool(flagged.get("device_new"))
+        if (
+            verdict != "fraud" and pattern == "undocumented" and ring_fraud_confirmed >= 3
+            and own_signal and state["trigger_type"] == "analyst_request"
+        ):
+            verdict = "fraud"
+
+    # R9/Notes: a legitimate verdict has no fraud pattern to report, regardless of what
+    # choose_pattern matched on the evidence gathered before a clearing response arrived.
+    if verdict == "legitimate":
+        pattern = "none"
 
     pattern_description = ""
     if pattern == "undocumented":
-        pattern_description = (
-            f"Coordinated activity across a {state['ring']['size']}-member cluster with "
-            f"{state['ring']['known_fraud_count']} known-fraud members, not matching any of the five documented patterns."
-        )
+        member_cards = state["ring"].get("member_card_ids", [])
+        devices = state["ring"].get("rare_shared_devices", [])
+        if member_cards:
+            pattern_description = (
+                f"{len(member_cards)} other card(s) share a device profile with this account"
+                f"{f' ({devices[0]})' if devices else ''} that this transaction otherwise fits none of the five documented "
+                f"fraud patterns for - coordinated activity across accounts that isn't card testing, card-not-present fraud, "
+                f"out-of-region use, or account takeover on their own."
+            )
+        else:
+            pattern_description = (
+                f"Activity connects to {state['ring']['known_fraud_count']} account(s) with confirmed fraud history, "
+                f"but does not fit any of the five documented fraud patterns on its own."
+            )
 
     result = {
         "pattern": pattern,
@@ -186,6 +313,7 @@ def assess_patterns_and_risk(state: dict) -> dict:
         "confidence": confidence,
         "verdict": verdict,
         "evidence_signal_count": signal_count,
+        "recurring_pattern_match": _matches_recurring_pattern(txns, flagged),
     }
     if "confidence_before" not in state:
         result["confidence_before"] = confidence  # first pass, before any evidence response - never overwritten again
@@ -199,6 +327,7 @@ def uncertainty_gate(state: dict) -> dict:
         pattern=state["pattern"], verdict=state["verdict"], fraud_probability=state["confidence"]["score"],
         exposure_usd=state.get("exposure_usd", 0), ring=state["ring"], evidence_signal_count=state.get("evidence_signal_count", 0),
         last_response=None, already_cleared_amount=state.get("already_cleared_amount", 0),
+        trigger_type=state["trigger_type"], recurring_pattern_match=state.get("recurring_pattern_match", False),
     )
     return {"initial_actions": initial}
 
@@ -213,10 +342,14 @@ def route_after_uncertainty(state: dict) -> str:
     # push the score past the act threshold in one step, ending the loop as a side
     # effect); the smaller additive nudge doesn't always clear that threshold on its
     # own, so the stop condition has to be explicit now.
-    if any(r["type"] == "customer_validation" for r in state["evidence_requests"]):
+    if any(r["type"] in ("customer_validation", "step_up_auth") for r in state["evidence_requests"]):
         return "decide_actions"
-    band = action_band(state["confidence"]["score"])
-    if band == "gather_more" and state["loop_count"] < _AGENT_CFG["max_evidence_loops"]:
+    # Was gated on action_band's "gather_more" range (0.40-0.75, config.yaml), which doesn't
+    # match verdict's own uncertain range (0.20-0.70, see assess_patterns_and_risk) - a score
+    # in [0.20, 0.40) was "uncertain" by verdict but "monitor_close" by action_band, so
+    # evidence was never requested and the case was stuck uncertain with no chance to ask a
+    # decisive customer_validation/step_up_auth question. Use verdict directly instead.
+    if state["verdict"] == "uncertain" and state["loop_count"] < _AGENT_CFG["max_evidence_loops"]:
         return "request_more_evidence"
     return "decide_actions"
 
@@ -237,7 +370,8 @@ def request_more_evidence(state: dict) -> dict:
         # every request type already asked, no new question left to ask - just stop looping
         return {"loop_count": state["loop_count"] + 1}
 
-    assumed = simulate_response(state["case_id"], req_type, state["ring"], state["similar_cases"])
+    case_facts = _build_case_facts(state)
+    assumed = simulate_response(state["case_id"], req_type, state["ring"], state["similar_cases"], case_facts)
 
     requests = list(state["evidence_requests"])
     requests.append({"type": req_type, "asked_after_step": state["loop_count"] + 1, "assumed_response": assumed})
@@ -284,6 +418,7 @@ def decide_actions(state: dict) -> dict:
         pattern=state["pattern"], verdict=state["verdict"], fraud_probability=state["confidence"]["score"],
         exposure_usd=exposure, ring=state["ring"], evidence_signal_count=state.get("evidence_signal_count", 0),
         last_response=state.get("customer_response"), last_request_type=last_request_type, already_cleared_amount=already_cleared,
+        trigger_type=state["trigger_type"], recurring_pattern_match=state.get("recurring_pattern_match", False),
     )
 
     initial_names = [a["action"] for a in state["initial_actions"]]
@@ -304,7 +439,13 @@ def decide_actions(state: dict) -> dict:
         what_changed = f"Confidence before/after: {before_score} -> {after_score}. Actions {initial_names} -> {final_names}."
 
     ring = state["ring"]
-    connected_cards = [f"{m}-K1" for m in ring["members"] if m != state["customer_id"]][:5]
+    # Real card IDs from device_ring (see backends/tigergraph.py::find_fraud_ring), not a
+    # guessed customer_id+"-K1" - a customer's involved card is often not their first one.
+    # Only cards with real fraud evidence (fraud_confirmed_member_cards), not every card that
+    # merely shares a rare device - R6 requires cards that show fraud, not just proximity.
+    # No fabricated fallback: if a backend doesn't populate this (e.g. LocalBackend, which
+    # only tracks customer-level ring membership), this stays honestly empty.
+    connected_cards = sorted(ring.get("fraud_confirmed_member_cards", []))[:10]
 
     files_report = "FILE_REPORT" in final_names
     ts_list = sorted(t.ts for t in state["subgraph_txns"] if t.txn_id in affected)
@@ -334,7 +475,12 @@ def decide_actions(state: dict) -> dict:
         "exposure_usd": exposure,
         "already_cleared_amount": already_cleared,
         "connected_card_ids": connected_cards,
-        "connected_device_profiles": state.get("device_profiles", []),
+        # rare_shared_devices (from device_ring) is the device that actually ties this case to
+        # other cards - state["device_profiles"] is just this account's own devices, which
+        # isn't the same claim ("linking this case to other cards" per the schema) and included
+        # devices with no ring at all. Fall back to the account's own devices only if device_ring
+        # found nothing, so the field is never empty for a case that clearly has a device signal.
+        "connected_device_profiles": ring.get("rare_shared_devices") or state.get("device_profiles", []),
         "sar": sar,
         "stop_reason": stop_reason,
     }
@@ -407,7 +553,9 @@ def explain(state: dict) -> dict:
 
     sar = dict(state["sar"])
     if sar["file"]:
-        narrative = complete(sar_prompt(ctx, state["customer_id"], [state["card_id"]] + state["connected_card_ids"], sar["activity_dates"], sar["total_amount_usd"]), context=ctx)
+        sar_card_ids = [state["card_id"]] + state["connected_card_ids"]
+        sar_ctx = {**ctx, "customer_id": state["customer_id"], "card_ids": sar_card_ids, "dates": sar["activity_dates"], "total_amount": sar["total_amount_usd"]}
+        narrative = complete(sar_prompt(ctx, state["customer_id"], sar_card_ids, sar["activity_dates"], sar["total_amount_usd"]), context=sar_ctx, kind="sar")
         if validate_citations(narrative, valid_ids):
             narrative = _fallback_text(state)
         sar["narrative"] = narrative

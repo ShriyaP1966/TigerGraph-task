@@ -1,9 +1,9 @@
 {
   "case_id": "HHG-006",
   "case": {
-    "status": "escalated",
-    "verdict": "uncertain",
-    "fraud_probability": 0.3817,
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.5617,
     "pattern": "card_not_present_fraud",
     "pattern_description": "",
     "affected_txn_ids": [
@@ -63,6 +63,12 @@
         "entity_ids": [
           "CC-3716"
         ]
+      },
+      {
+        "claim": "Requested customer_validation: Customer states they did not make this purchase and still has the card",
+        "source": "customer",
+        "ref": "simulate_response",
+        "entity_ids": []
       }
     ],
     "similar_prior_cases": [
@@ -70,11 +76,17 @@
       "CC-5192",
       "CC-3716"
     ],
-    "summary": "Investigation of HHG-006 found pattern=card_not_present_fraud with confidence 0.3817 (low risk), based on EV-001, EV-002, EV-003, EV-004.",
+    "summary": "Investigation of HHG-006 found pattern=card_not_present_fraud with confidence 0.5617 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.5617) alone would suggest.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-006"
   },
-  "evidence_requests": [],
+  "evidence_requests": [
+    {
+      "type": "customer_validation",
+      "asked_after_step": 1,
+      "assumed_response": "Customer states they did not make this purchase and still has the card"
+    }
+  ],
   "next_best_actions": {
     "initial": [
       {
@@ -85,12 +97,17 @@
     ],
     "final": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "R2: customer denied the transaction"
+      },
+      {
+        "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R1: single weak signal, verify before any block"
+        "reason": "R2: customer denial confirms a case"
       }
     ],
-    "what_changed": "nothing"
+    "what_changed": "Confidence before additional evidence was 0.3817 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.5617 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
     "file": false,
@@ -100,8 +117,8 @@
     "total_amount_usd": 0.0,
     "activity_dates": []
   },
-  "stop_reason": "Evidence gathered was sufficient to reach a defensible decision without further steps.",
-  "tool_calls": 9,
-  "tokens": 20,
-  "latency_s": 10.51
+  "stop_reason": "A simulated verification response settled the question.",
+  "tool_calls": 10,
+  "tokens": 46,
+  "latency_s": 6.62
 }

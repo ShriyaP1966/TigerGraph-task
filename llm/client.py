@@ -53,6 +53,57 @@ def _normalize_typography(text: str) -> str:
     return text.translate(_TYPOGRAPHY_TABLE)
 
 
+def _fixture_sar_narrative(context: dict | None) -> str:
+    """SAR narratives need who/what/when/where/how/why in 6-12 sentences
+    (DATASET_README.md sar.narrative field + section 3a) - _fixture_response's
+    generic 4-5 sentence blurb doesn't carry customer/card/date/amount at
+    all, so under LLM_MODE=fixture every SAR narrative was identical
+    boilerplate regardless of the actual case. Built deterministically from
+    real case data, same as everywhere else non-LLM in this agent."""
+    if not context:
+        return "Suspicious activity report: insufficient context to generate a narrative."
+
+    customer_id = context.get("customer_id", "the customer")
+    card_ids = context.get("card_ids") or []
+    cards_str = " and ".join(card_ids) if card_ids else "the flagged card"
+    dates = context.get("dates") or []
+    if len(dates) == 2 and dates[0] == dates[1]:
+        when = f"on {dates[0]}"
+    elif len(dates) == 2:
+        when = f"between {dates[0]} and {dates[1]}"
+    else:
+        when = "on the date(s) identified in the investigation"
+    amount = context.get("total_amount", 0) or 0
+    pattern = context.get("pattern", "none")
+    pattern_str = pattern.replace("_", " ") if pattern and pattern != "none" else "activity inconsistent with this cardholder's established pattern"
+    ev_claims = [e["claim"] for e in context.get("evidence", [])]
+    ring_size = context.get("ring_size", 1) or 1
+    ring_known_fraud = context.get("ring_known_fraud", 0) or 0
+
+    sentences = [
+        f"This report concerns customer {customer_id}, associated with card(s) {cards_str}.",
+        f"The bank identified activity consistent with {pattern_str}, {when}, totaling ${amount:.2f} in exposure.",
+    ]
+    for claim in ev_claims[:4]:
+        claim = claim.strip().rstrip(".")
+        sentences.append(f"{claim[:1].upper()}{claim[1:]}.")
+    if ring_size > 1:
+        sentences.append(
+            f"This activity connects to a broader cluster of {ring_size} related card(s)"
+            + (f", {ring_known_fraud} of which have confirmed prior fraud." if ring_known_fraud else ", sharing the same origin identified above.")
+        )
+    sentences.append(
+        f"Given the pattern, timing, and connected activity described above, this is assessed as suspicious "
+        f"and meets the bank's threshold for regulatory reporting."
+    )
+    sentences.append(f"The affected card(s) have been placed under protective action pending further review.")
+
+    # Floor of 6, cap of 12, per the Answer Format's exact bound
+    while len(sentences) < 6:
+        sentences.append("No further activity outside the scope described above was identified in the investigation window.")
+    return " ".join(sentences[:12])
+
+
 def _call_groq(prompt: str) -> str:
     from groq import Groq
 
@@ -75,10 +126,10 @@ def _call_gemini(prompt: str) -> str:
     return resp.text.strip()
 
 
-def complete(prompt: str, context: dict | None = None) -> str:
+def complete(prompt: str, context: dict | None = None, kind: str = "explanation") -> str:
     mode = os.environ.get("LLM_MODE", "fixture")
     if mode == "fixture":
-        return _fixture_response(context)
+        return _fixture_sar_narrative(context) if kind == "sar" else _fixture_response(context)
 
     if os.environ.get("GROQ_API_KEY"):
         try:

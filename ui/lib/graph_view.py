@@ -8,10 +8,10 @@ those fields — e.g. the schema does not say which transaction belongs to
 which account, so every transaction links to the case itself rather than to
 a guessed account.
 
-Edge labels follow the data model drafted in the P3 role brief
+Edge labels follow the graph data model
 (FraudCase -INVOLVES-> Transaction/Account/Customer, -MATCHES-> FraudTypology,
--SIMILAR_TO-> FraudCase), so this preview lines up with what P1 will
-eventually load into TigerGraph.
+-SIMILAR_TO-> FraudCase), so this preview lines up with what's
+loaded into TigerGraph.
 """
 
 from __future__ import annotations

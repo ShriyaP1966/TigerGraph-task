@@ -1,4 +1,4 @@
-"""Fraud Investigation analyst dashboard (P3).
+"""Fraud Investigation analyst dashboard.
 
 Renders case data shaped like contracts/case_record_schema.json. Reads the
 real cases/*.json answer files via api.py (see lib/data.py), falling back to

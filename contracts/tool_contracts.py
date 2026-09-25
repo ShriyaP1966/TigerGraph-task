@@ -1,4 +1,4 @@
-"""Input/output models for every GraphBackend method. Source of truth for P1 —
+"""Input/output models for every GraphBackend method. Source of truth for the graph layer —
 export_schemas() below writes these out as JSON Schema so tigergraph-mcp tools
 can be built to match without importing this file.
 
@@ -57,6 +57,9 @@ class FraudRingOutput(BaseModel):
     members: list[str]
     known_fraud_count: int
     shared_via: list[str]  # e.g. ["SHARES_DEVICE", "SHARES_ADDRESS"]
+    member_card_ids: list[str] = Field(default_factory=list)  # real card IDs sharing a rare device - not customer IDs, not fraud-filtered
+    rare_shared_devices: list[str] = Field(default_factory=list)  # device profile(s) actually tying this case to other cards
+    fraud_confirmed_member_cards: list[str] = Field(default_factory=list)  # subset of member_card_ids with real fraud evidence (confirmed-fraud closed case, or elevated risk_score in the same window) - R6 requires more than just a shared device
 
 
 class TransactionVelocityInput(BaseModel):

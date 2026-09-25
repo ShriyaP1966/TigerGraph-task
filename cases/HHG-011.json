@@ -3,15 +3,32 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.5892,
-    "pattern": "account_takeover",
+    "fraud_probability": 0.4992,
+    "pattern": "none",
     "pattern_description": "",
     "affected_txn_ids": [
       "3583368"
     ],
     "first_suspicious_txn_id": "3583368",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00018-K1",
+      "C00071-K1",
+      "C00073-K2",
+      "C00259-K1",
+      "C00294-K2",
+      "C00373-K1",
+      "C00405-K1",
+      "C00405-K2",
+      "C00426-K2",
+      "C00466-K1"
+    ],
+    "connected_device_profiles": [
+      "B3-A40||chrome 64.0 for android|",
+      "Lenovo K33b36 Build/MMB29M||chrome 63.0 for android|",
+      "SM-A320Y Build/NRD90M||chrome 62.0 for android|",
+      "LG-D693n Build/LRX22G||chrome 60.0 for android|",
+      "Nexus 6 Build/N6F27M||chrome 65.0 for android|"
+    ],
     "exposure_usd": 131.3,
     "evidence": [
       {
@@ -27,6 +44,30 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "17 other card(s) sharing a rare device profile via B3-A40||chrome 64.0 for android| show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00018-K1",
+          "C00071-K1",
+          "C00073-K2",
+          "C00259-K1",
+          "C00294-K2",
+          "C00373-K1",
+          "C00405-K1",
+          "C00405-K2",
+          "C00426-K2",
+          "C00466-K1",
+          "C00583-K1",
+          "C00606-K1",
+          "C00648-K1",
+          "C00655-K1",
+          "C00750-K2",
+          "C00792-K1",
+          "C00854-K2"
+        ]
       },
       {
         "claim": "1 txns in the last hour totaling $41.30, z-score 3.74",
@@ -76,7 +117,7 @@
       "CC-1056",
       "CC-3039"
     ],
-    "summary": "Investigation of HHG-011 found pattern=account_takeover with confidence 0.5892 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.5892) alone would suggest.",
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009 was reviewed. The account is linked to a 51-member cluster with 17 known-fraud members. Most similar prior case: CC-2799 (similarity 0.4487, outcome confirmed_fraud). Confidence 0.4992 (medium risk). Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.4992) alone would suggest.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-011"
   },
@@ -107,7 +148,7 @@
         "reason": "R2: customer denial confirms a case"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.4092 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.5892 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
+    "what_changed": "Confidence before additional evidence was 0.3192 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.4992 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
     "file": false,
@@ -119,6 +160,6 @@
   },
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 10,
-  "tokens": 46,
-  "latency_s": 24.81
+  "tokens": 74,
+  "latency_s": 11.53
 }

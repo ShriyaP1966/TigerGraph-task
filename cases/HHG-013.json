@@ -1,17 +1,34 @@
 {
   "case_id": "HHG-013",
   "case": {
-    "status": "closed_fraud",
-    "verdict": "fraud",
-    "fraud_probability": 0.708,
+    "status": "escalated",
+    "verdict": "uncertain",
+    "fraud_probability": 0.538,
     "pattern": "account_takeover",
     "pattern_description": "",
     "affected_txn_ids": [
       "3526826"
     ],
     "first_suspicious_txn_id": "3526826",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00197-K1",
+      "C00235-K2",
+      "C00329-K2",
+      "C00594-K1",
+      "C00750-K2",
+      "C00854-K2",
+      "C01116-K2",
+      "C01155-K2",
+      "C01224-K1",
+      "C01377-K1"
+    ],
+    "connected_device_profiles": [
+      "SAMSUNG SM-G950U Build/NRD90M|Android 7.0|samsung browser 6.4|2220x1080",
+      "iOS Device|iOS 11.1.1|mobile safari 11.0|2436x1125",
+      "iOS Device|iOS 10.0.2|mobile safari 10.0|1136x640",
+      "rv:11.0|Windows 7|ie 11.0 for desktop|1680x1050",
+      "LG-H871|Android 7.0|firefox|2672x1440"
+    ],
     "exposure_usd": 35.66,
     "evidence": [
       {
@@ -27,6 +44,45 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "32 other card(s) sharing a rare device profile via SAMSUNG SM-G950U Build/NRD90M|Android 7.0|samsung browser 6.4|2220x1080 show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00197-K1",
+          "C00235-K2",
+          "C00329-K2",
+          "C00594-K1",
+          "C00750-K2",
+          "C00854-K2",
+          "C01116-K2",
+          "C01155-K2",
+          "C01224-K1",
+          "C01377-K1",
+          "C01744-K2",
+          "C01755-K2",
+          "C01909-K2",
+          "C01982-K2",
+          "C02231-K1",
+          "C02695-K1",
+          "C02923-K1",
+          "C03218-K2",
+          "C03412-K1",
+          "C03933-K1",
+          "C03999-K1",
+          "C04108-K2",
+          "C04865-K1",
+          "C05061-K1",
+          "C05245-K2",
+          "C05530-K2",
+          "C05704-K2",
+          "C05786-K2",
+          "C06121-K2",
+          "C06168-K1",
+          "C06224-K2",
+          "C06742-K1"
+        ]
       },
       {
         "claim": "2 txns in the last hour totaling $1767.90, z-score -0.12",
@@ -69,16 +125,10 @@
         "source": "external",
         "ref": "simulate_response",
         "entity_ids": []
-      },
-      {
-        "claim": "Requested customer_validation: Customer states they did not make this purchase and still has the card",
-        "source": "customer",
-        "ref": "simulate_response",
-        "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "Investigation of HHG-013 found pattern=account_takeover with confidence 0.708 (medium risk), based on EV-001, EV-002, EV-003, EV-004.",
+    "summary": "Investigation of HHG-013 found pattern=account_takeover with confidence 0.538 (medium risk), based on EV-001, EV-002, EV-003, EV-004.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-013"
   },
@@ -87,11 +137,6 @@
       "type": "step_up_auth",
       "asked_after_step": 1,
       "assumed_response": "Step-up authentication failed, likely not the account owner"
-    },
-    {
-      "type": "customer_validation",
-      "asked_after_step": 2,
-      "assumed_response": "Customer states they did not make this purchase and still has the card"
     }
   ],
   "next_best_actions": {
@@ -104,17 +149,12 @@
     ],
     "final": [
       {
-        "action": "BLOCK_CARD",
-        "route": "L1",
-        "reason": "R2: customer denied the transaction"
-      },
-      {
-        "action": "CREATE_CASE",
+        "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "R2: customer denial confirms a case"
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.498 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.708 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
+    "what_changed": "Confidence before additional evidence was 0.408 (actions: ['MONITOR_CARD']). After step_up_auth response ('Step-up authentication failed, likely not the account owner'), confidence moved to 0.538 (actions: ['MONITOR_CARD'])."
   },
   "sar": {
     "file": false,
@@ -125,7 +165,7 @@
     "activity_dates": []
   },
   "stop_reason": "A simulated verification response settled the question.",
-  "tool_calls": 11,
+  "tool_calls": 10,
   "tokens": 20,
-  "latency_s": 12.32
+  "latency_s": 8.05
 }

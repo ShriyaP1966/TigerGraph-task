@@ -1,5 +1,5 @@
 """Loads graph/loading/{policy_clauses,typologies}_chunked.tsv (POL-*/TYP-*,
-built by build_chunked_policy_typology_tsv.py from P3's real chunked docs) into
+built by build_chunked_policy_typology_tsv.py from the real chunked docs) into
 the live TigerGraph instance, reusing the existing load_policy_typology_action
 job. Additive only: these IDs are a different namespace from the existing
 R1-R10 / pattern-name PolicyClause and FraudTypology vertices, so nothing

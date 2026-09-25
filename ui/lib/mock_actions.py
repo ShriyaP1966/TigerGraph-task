@@ -1,7 +1,7 @@
 """Human-in-the-loop approval workflow, backed by the real action ledger.
 
 This used to be a local mock (a JSON file overlay); now it delegates to
-api.py / actions.ledger (the real sqlite-backed policy gate P2's agent also
+api.py / actions.ledger (the real sqlite-backed policy gate the agent also
 writes to), so Approve/Reject here are real decisions, not a demo-only
 simulation. Function names/signatures are unchanged from the mock version
 so app.py and components/approvals.py needed no edits.

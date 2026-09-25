@@ -1,6 +1,6 @@
-"""Phase 4 tool (P3): validates a submission answer file against the exact
+"""Validates a submission answer file against the exact
 format the dataset README defines — the "Answer Format" section of
-README1.md (fields, enums, and the cross-field rules it states explicitly:
+DATASET_README.md (fields, enums, and the cross-field rules it states explicitly:
 legitimate verdicts must have empty affected_txn_ids/zero exposure/no SAR,
 sar.file must agree with whether FILE_REPORT appears in the final actions,
 approval routes must match the policy's routing table, etc.).
@@ -11,7 +11,7 @@ file is shaped the way the graders expect and doesn't contradict itself.
 
 Also cross-checks case_id against case_pack.csv and similar_prior_cases
 entries against closed_cases_history.csv, since both are already in this
-repo and let us catch a made-up ID before submission (README1.md: "IDs must
+repo and let us catch a made-up ID before submission (DATASET_README.md: "IDs must
 be the ones in the dataset. Made-up IDs score zero.").
 
 Usage:
@@ -46,7 +46,7 @@ EVIDENCE_SOURCE_VALUES = {"graph", "document", "customer", "external"}
 EVIDENCE_REQUEST_TYPE_VALUES = {"customer_validation", "step_up_auth", "analyst_info"}
 ROUTE_VALUES = {"auto", "L1", "L2"}
 
-# Policy section 2 (README1.md "Fraud Policy" -> "2. Approval routing").
+# Policy section 2 (DATASET_README.md "Fraud Policy" -> "2. Approval routing").
 AUTO_ONLY_ACTIONS = {
     "ALLOW_TRANSACTION",
     "MONITOR_CARD",
@@ -232,7 +232,7 @@ def validate_answer(data: dict[str, Any], known_case_ids: set[str], known_closed
             if file_flag != files_report:
                 errors.append(
                     f"sar.file={file_flag} does not agree with whether FILE_REPORT appears in "
-                    f"next_best_actions.final (README1.md: 'Must agree with whether FILE_REPORT appears in your final actions')"
+                    f"next_best_actions.final (DATASET_README.md: 'Must agree with whether FILE_REPORT appears in your final actions')"
                 )
 
         if file_flag is True:

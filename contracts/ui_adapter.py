@@ -1,5 +1,5 @@
 """Bridges the Answer Format (contracts/case_record.py, the graded submission
-shape) to P3's case_record_schema.json (what the Streamlit dashboard renders).
+shape) to case_record_schema.json (what the Streamlit dashboard renders).
 
 The two schemas model the same investigation at different granularity, so this
 is a best-effort, documented-lossy mapping, not a lossless round trip:

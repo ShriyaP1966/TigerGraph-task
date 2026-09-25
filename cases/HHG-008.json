@@ -1,18 +1,33 @@
 {
   "case_id": "HHG-008",
   "case": {
-    "status": "closed_fraud",
-    "verdict": "fraud",
-    "fraud_probability": 0.6659,
-    "pattern": "account_takeover",
+    "status": "closed_legitimate",
+    "verdict": "legitimate",
+    "fraud_probability": 0.2759,
+    "pattern": "none",
     "pattern_description": "",
-    "affected_txn_ids": [
-      "3558054"
+    "affected_txn_ids": [],
+    "first_suspicious_txn_id": "",
+    "connected_card_ids": [
+      "C00071-K1",
+      "C00073-K2",
+      "C00259-K1",
+      "C00294-K2",
+      "C00405-K1",
+      "C00405-K2",
+      "C00426-K2",
+      "C00466-K1",
+      "C00583-K1",
+      "C00792-K1"
     ],
-    "first_suspicious_txn_id": "3558054",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
-    "exposure_usd": 55.68,
+    "connected_device_profiles": [
+      "SAMSUNG||samsung browser generic|",
+      "SM-J710MN Build/MMB29K||chrome 64.0 for android|",
+      "RNE-L03 Build/HUAWEIRNE-L03||chrome 65.0 for android|",
+      "SM-J701M Build/NRD90M||chrome 66.0 for android|",
+      "SM-G570M Build/MMB29K||chrome 64.0 for android|"
+    ],
+    "exposure_usd": 0.0,
     "evidence": [
       {
         "claim": "Trigger (customer_report): Customer C13171 message: 'I never made this $55.68 purchase. Please check my card.' Refers to 3558054.",
@@ -27,6 +42,40 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "27 other card(s) sharing a rare device profile via SAMSUNG||samsung browser generic| show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00071-K1",
+          "C00073-K2",
+          "C00259-K1",
+          "C00294-K2",
+          "C00405-K1",
+          "C00405-K2",
+          "C00426-K2",
+          "C00466-K1",
+          "C00583-K1",
+          "C00792-K1",
+          "C00854-K2",
+          "C00978-K1",
+          "C01002-K1",
+          "C01109-K2",
+          "C01138-K2",
+          "C01154-K1",
+          "C01155-K2",
+          "C01339-K1",
+          "C01434-K1",
+          "C01521-K2",
+          "C01525-K2",
+          "C01562-K1",
+          "C01656-K1",
+          "C01744-K2",
+          "C01810-K1",
+          "C01846-K1",
+          "C01890-K1"
+        ]
       },
       {
         "claim": "1 txns in the last hour totaling $18.68, z-score 2.28",
@@ -65,7 +114,7 @@
         ]
       },
       {
-        "claim": "Requested customer_validation: Customer states they did not make this purchase and still has the card",
+        "claim": "Requested customer_validation: Customer confirms they made this purchase",
         "source": "customer",
         "ref": "simulate_response",
         "entity_ids": []
@@ -76,7 +125,7 @@
       "CC-3079",
       "CC-0467"
     ],
-    "summary": "Investigation of HHG-008 found pattern=account_takeover with confidence 0.6659 (medium risk), based on EV-001, EV-002, EV-003, EV-004. Verdict set to fraud by the customer's direct response (R2/R3), overriding what the medium confidence score (0.6659) alone would suggest.",
+    "summary": "Evidence EV-001, EV-002, EV-003, EV-004, EV-005, EV-006, EV-007, EV-008, EV-009 was reviewed. The account is linked to a 51-member cluster with 27 known-fraud members. Most similar prior case: CC-0056 (similarity 0.4075, outcome confirmed_fraud). Confidence 0.2759 (low risk). Verdict set to legitimate by the customer's direct response (R2/R3), overriding what the low confidence score (0.2759) alone would suggest.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-008"
   },
@@ -84,7 +133,7 @@
     {
       "type": "customer_validation",
       "asked_after_step": 1,
-      "assumed_response": "Customer states they did not make this purchase and still has the card"
+      "assumed_response": "Customer confirms they made this purchase"
     }
   ],
   "next_best_actions": {
@@ -97,17 +146,12 @@
     ],
     "final": [
       {
-        "action": "BLOCK_CARD",
-        "route": "L1",
-        "reason": "R2: customer denied the transaction"
-      },
-      {
-        "action": "CREATE_CASE",
+        "action": "CLOSE_NO_FRAUD",
         "route": "auto",
-        "reason": "R2: customer denial confirms a case"
+        "reason": "R3: customer confirmed the transaction"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.4859 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.6659 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
+    "what_changed": "Confidence before additional evidence was 0.3959 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer confirms they made this purchase'), confidence moved to 0.2759 (actions: ['CLOSE_NO_FRAUD'])."
   },
   "sar": {
     "file": false,
@@ -119,6 +163,6 @@
   },
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 10,
-  "tokens": 46,
-  "latency_s": 9.53
+  "tokens": 74,
+  "latency_s": 6.81
 }

@@ -149,6 +149,37 @@ class TigerGraphBackend(GraphBackend):
             logger.warning("tigergraph get_account_subgraph failed (%s), falling back to local", e)
             return self._local.get_account_subgraph(account_id, as_of, card_id)
 
+    # closed_cases_history.csv covers 1,422 of 13,553 total customers as confirmed_fraud -
+    # measured directly (pd.read_csv, unique customer_id where outcome=="confirmed_fraud",
+    # divided by len(customers.csv)). Any random sample of cards will show ~10.5% "confirmed
+    # fraud" by pure chance, same base-rate trap SIMILAR_CASE_BASE_RATE in agent/rules.py
+    # already accounts for elsewhere - a raw count/fraction here would flag most device-ring
+    # clusters as "real fraud evidence" regardless of whether the device sharing means
+    # anything, since ~30-50 candidate cards yields ~3-5 base-rate hits on average already.
+    _FRAUD_BASE_RATE = 0.105
+
+    def _filter_fraud_confirmed(self, candidate_card_ids: list[str], as_of: str | None) -> list[str]:
+        """R6 requires cards that *show fraud*, not just a shared device. Only counts a
+        confirmed_fraud closed case as fraud evidence - not an elevated risk_score, which
+        DATASET_README.md notes is common ("above 0.7, most flagged transactions turn out to
+        be legitimate"), not rare, in this dataset.
+
+        The qualifying list is only returned if it's both a meaningful absolute count (>=3)
+        AND a fraction well above the _FRAUD_BASE_RATE random-chance rate (>=3x) - otherwise
+        this is base-rate coincidence, not a real ring signal, and every downstream consumer
+        (shared_origin, choose_pattern's undocumented path, the verdict override,
+        connected_card_ids) should see an empty list, not a misleading one."""
+        if not candidate_card_ids:
+            return []
+
+        confirmed = self._local._confirmed_fraud_accounts
+        qualified = [mc for mc in candidate_card_ids if mc.split("-")[0] in confirmed]
+
+        fraction = len(qualified) / len(candidate_card_ids)
+        if len(qualified) >= 3 and fraction >= self._FRAUD_BASE_RATE * 3:
+            return qualified
+        return []
+
     def find_fraud_ring(self, account_id: str, as_of: str | None = None, card_id: str | None = None) -> FraudRingOutput:
         try:
             if self._p1 is None:
@@ -163,7 +194,42 @@ class TigerGraphBackend(GraphBackend):
             # closed_cases_history.csv every backend loads, not a fabricated number
             known_fraud = sum(1 for m in members if m in self._local._confirmed_fraud_accounts)
 
-            return FraudRingOutput(ring_id=r["cluster_id"], size=len(members) or 1, members=members or [account_id], known_fraud_count=known_fraud, shared_via=shared_via)
+            # find_fraud_ring's own 1-hop SHARES_DEVICE walk has no fanout cap (unlike
+            # SHARES_EMAIL/SHARES_ADDRESS), so a common device fingerprint returns thousands
+            # of unrelated cards - not usable as connected_card_ids/connected_device_profiles.
+            # device_ring isolates only the seed card's *rare* (2..60 cards) shared device(s),
+            # with real card IDs - not the customer_id+"-K1" guess this used to fall back to.
+            # Kept at 60 rather than a tighter cap: ring evidence is gated to analyst_request
+            # cases only (see agent/rules.py, agent/patterns.py), so a wider cap no longer
+            # causes over-triggering on customer_report/risk_score cases.
+            member_card_ids: list[str] = []
+            rare_shared_devices: list[str] = []
+            try:
+                dr = self._p1.device_ring(card, max_cards=60)
+                rare_shared_devices = dr.get("rare_shared_devices", [])
+                # device_ring caps *per device* (2..60 cards each), but a card touching many
+                # distinct rare devices can still union to a large total - cap the aggregate
+                # too, so a legitimately-narrow-per-device result can't still blow up
+                # connected_card_ids / evidence entity_ids / SAR subjects downstream.
+                member_card_ids = sorted(dr.get("cards", []))[:50]
+                rare_shared_devices = rare_shared_devices[:5]
+            except Exception as dr_e:
+                logger.warning("device_ring failed (%s), connected_card_ids/connected_device_profiles will be empty rather than guessed", dr_e)
+
+            # R6 ("shared origin"): sharing a rare device alone isn't fraud - several cards
+            # must actually *show fraud*. Filter member_card_ids down to ones with real
+            # evidence: a confirmed-fraud closed case for that customer, or their own
+            # elevated risk_score in the same window as this case. Everything else
+            # (connected_card_ids, the shared_origin signal, evidence citations) should
+            # only ever see this filtered list, not the raw device-sharing membership.
+            fraud_confirmed_member_cards = self._filter_fraud_confirmed(member_card_ids, as_of)
+
+            return FraudRingOutput(
+                ring_id=r["cluster_id"], size=len(members) or 1, members=members or [account_id],
+                known_fraud_count=known_fraud, shared_via=shared_via,
+                member_card_ids=member_card_ids, rare_shared_devices=rare_shared_devices,
+                fraud_confirmed_member_cards=fraud_confirmed_member_cards,
+            )
         except Exception as e:
             logger.warning("tigergraph find_fraud_ring failed (%s), falling back to local", e)
             return self._local.find_fraud_ring(account_id, as_of, card_id)

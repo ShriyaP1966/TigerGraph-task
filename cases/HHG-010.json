@@ -1,17 +1,33 @@
 {
   "case_id": "HHG-010",
   "case": {
-    "status": "escalated",
-    "verdict": "uncertain",
-    "fraud_probability": 0.35,
+    "status": "closed_fraud",
+    "verdict": "fraud",
+    "fraud_probability": 0.58,
     "pattern": "account_takeover",
     "pattern_description": "",
     "affected_txn_ids": [
       "3506725"
     ],
     "first_suspicious_txn_id": "3506725",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00750-K2",
+      "C00854-K2",
+      "C00942-K2",
+      "C01155-K2",
+      "C01721-K2",
+      "C01983-K1",
+      "C02131-K1",
+      "C02231-K1",
+      "C02354-K2",
+      "C02716-K2"
+    ],
+    "connected_device_profiles": [
+      "iOS Device|iOS 11.2.5|mobile safari generic|1136x640",
+      "MacOS|Mac OS X 10_10_5|chrome 65.0|1280x800",
+      "MacOS|Mac OS X 10_13_4|safari generic|1440x900",
+      "Windows|Windows 10|chrome 61.0|1920x1080"
+    ],
     "exposure_usd": 1000.03,
     "evidence": [
       {
@@ -27,6 +43,48 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "35 other card(s) sharing a rare device profile via iOS Device|iOS 11.2.5|mobile safari generic|1136x640 show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00750-K2",
+          "C00854-K2",
+          "C00942-K2",
+          "C01155-K2",
+          "C01721-K2",
+          "C01983-K1",
+          "C02131-K1",
+          "C02231-K1",
+          "C02354-K2",
+          "C02716-K2",
+          "C02809-K2",
+          "C02897-K1",
+          "C02902-K2",
+          "C03019-K2",
+          "C03040-K2",
+          "C03042-K1",
+          "C03218-K2",
+          "C03231-K2",
+          "C03341-K2",
+          "C03474-K1",
+          "C03558-K1",
+          "C03685-K2",
+          "C03738-K2",
+          "C03933-K1",
+          "C04046-K2",
+          "C04108-K2",
+          "C04125-K2",
+          "C04798-K2",
+          "C05245-K2",
+          "C05487-K1",
+          "C05560-K2",
+          "C05704-K2",
+          "C06067-K2",
+          "C06220-K1",
+          "C06224-K2"
+        ]
       },
       {
         "claim": "1 txns in the last hour totaling $107.96, z-score 3.19",
@@ -65,14 +123,14 @@
         ]
       },
       {
-        "claim": "Requested step_up_auth: Step-up authentication passed",
+        "claim": "Requested step_up_auth: Step-up authentication failed, likely not the account owner",
         "source": "external",
         "ref": "simulate_response",
         "entity_ids": []
       }
     ],
     "similar_prior_cases": [],
-    "summary": "Investigation of HHG-010 found pattern=account_takeover with confidence 0.35 (low risk), based on EV-001, EV-002, EV-003, EV-004.",
+    "summary": "Investigation of HHG-010 found pattern=account_takeover with confidence 0.58 (medium risk), based on EV-001, EV-002, EV-003, EV-004.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-010"
   },
@@ -80,36 +138,62 @@
     {
       "type": "step_up_auth",
       "asked_after_step": 1,
-      "assumed_response": "Step-up authentication passed"
+      "assumed_response": "Step-up authentication failed, likely not the account owner"
     }
   ],
   "next_best_actions": {
     "initial": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
+        "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "R1: single weak signal, verify before any block"
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
       }
     ],
     "final": [
       {
-        "action": "ESCALATE_TO_ANALYST",
+        "action": "BLOCK_CARD",
+        "route": "L1",
+        "reason": "high confidence fraud on multiple signals"
+      },
+      {
+        "action": "CREATE_CASE",
         "route": "auto",
-        "reason": "R8: uncertain verdict with exposure over $500"
+        "reason": "opening a case for a confirmed-looking fraud pattern"
+      },
+      {
+        "action": "FILE_REPORT",
+        "route": "L2",
+        "reason": "3a: fraud confirmed, exposure over $1000"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.42 (actions: ['VERIFY_WITH_CUSTOMER']). After step_up_auth response ('Step-up authentication passed'), confidence moved to 0.35 (actions: ['ESCALATE_TO_ANALYST'])."
+    "what_changed": "Confidence before additional evidence was 0.45 (actions: ['MONITOR_CARD']). After step_up_auth response ('Step-up authentication failed, likely not the account owner'), confidence moved to 0.58 (actions: ['BLOCK_CARD', 'CREATE_CASE', 'FILE_REPORT'])."
   },
   "sar": {
-    "file": false,
-    "reason": "not required for this case",
-    "narrative": "",
-    "subjects": [],
-    "total_amount_usd": 0.0,
-    "activity_dates": []
+    "file": true,
+    "reason": "3a: fraud confirmed, exposure over $1000",
+    "narrative": "This report concerns customer C10434, associated with card(s) C10434-K1 and C00750-K2 and C00854-K2 and C00942-K2 and C01155-K2 and C01721-K2 and C01983-K1 and C02131-K1 and C02231-K1 and C02354-K2 and C02716-K2. The bank identified activity consistent with account takeover, on 2016-12-02, totaling $1000.03 in exposure. Trigger (risk_score): Real-time model scored transaction 3506725 ($1,000.03, online) at 0.90. Review and decide. 34 transactions in the account's recent window. 35 other card(s) sharing a rare device profile via iOS Device|iOS 11.2.5|mobile safari generic|1136x640 show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device. 1 txns in the last hour totaling $107.96, z-score 3.19. This activity connects to a broader cluster of 51 related card(s), 35 of which have confirmed prior fraud. Given the pattern, timing, and connected activity described above, this is assessed as suspicious and meets the bank's threshold for regulatory reporting. The affected card(s) have been placed under protective action pending further review.",
+    "subjects": [
+      "C10434",
+      "C10434-K1",
+      "C00750-K2",
+      "C00854-K2",
+      "C00942-K2",
+      "C01155-K2",
+      "C01721-K2",
+      "C01983-K1",
+      "C02131-K1",
+      "C02231-K1",
+      "C02354-K2",
+      "C02716-K2"
+    ],
+    "total_amount_usd": 1000.03,
+    "activity_dates": [
+      "2016-12-02",
+      "2016-12-02"
+    ]
   },
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 10,
-  "tokens": 20,
-  "latency_s": 3.38
+  "tokens": 226,
+  "latency_s": 7.41
 }

@@ -3,15 +3,32 @@
   "case": {
     "status": "closed_fraud",
     "verdict": "fraud",
-    "fraud_probability": 0.7562,
+    "fraud_probability": 0.7862,
     "pattern": "out_of_region_use",
     "pattern_description": "",
     "affected_txn_ids": [
       "3530164"
     ],
     "first_suspicious_txn_id": "3530164",
-    "connected_card_ids": [],
-    "connected_device_profiles": [],
+    "connected_card_ids": [
+      "C00235-K2",
+      "C00450-K1",
+      "C00750-K2",
+      "C00768-K2",
+      "C00779-K1",
+      "C00854-K2",
+      "C00889-K2",
+      "C01155-K2",
+      "C01377-K1",
+      "C01721-K2"
+    ],
+    "connected_device_profiles": [
+      "Trident/7.0|Windows 10|ie 11.0 for desktop|1440x900",
+      "rv:58.0|Mac OS X 10.12|firefox 58.0|1440x900",
+      "SAMSUNG-SM-G935A Build/NRD90M|Android 7.0|chrome 62.0 for android|1920x1080",
+      "MacOS|Mac OS X 10_11_6|safari 11.0|1280x800",
+      "Windows|Windows 10|firefox 59.0|2560x1080"
+    ],
     "exposure_usd": 49.0,
     "evidence": [
       {
@@ -27,6 +44,48 @@
         "source": "graph",
         "ref": "get_account_subgraph",
         "entity_ids": []
+      },
+      {
+        "claim": "35 other card(s) sharing a rare device profile via Trident/7.0|Windows 10|ie 11.0 for desktop|1440x900 show real fraud evidence (a confirmed_fraud closed case on record), out of 50 total cards on that device",
+        "source": "graph",
+        "ref": "device_ring",
+        "entity_ids": [
+          "C00235-K2",
+          "C00450-K1",
+          "C00750-K2",
+          "C00768-K2",
+          "C00779-K1",
+          "C00854-K2",
+          "C00889-K2",
+          "C01155-K2",
+          "C01377-K1",
+          "C01721-K2",
+          "C01909-K2",
+          "C01982-K2",
+          "C02231-K1",
+          "C02250-K2",
+          "C02342-K1",
+          "C02354-K2",
+          "C02480-K1",
+          "C02716-K2",
+          "C03019-K2",
+          "C03040-K2",
+          "C03047-K2",
+          "C03218-K2",
+          "C03278-K2",
+          "C03558-K1",
+          "C03575-K2",
+          "C03738-K2",
+          "C03856-K1",
+          "C04108-K2",
+          "C04125-K2",
+          "C04196-K2",
+          "C04798-K2",
+          "C05245-K2",
+          "C05385-K2",
+          "C05472-K1",
+          "C05560-K2"
+        ]
       },
       {
         "claim": "1 txns in the last hour totaling $90.05, z-score 0.16",
@@ -76,7 +135,7 @@
       "CC-4957",
       "CC-3682"
     ],
-    "summary": "Investigation of HHG-003 found pattern=out_of_region_use with confidence 0.7562 (high risk), based on EV-001, EV-002, EV-003, EV-004.",
+    "summary": "Investigation of HHG-003 found pattern=out_of_region_use with confidence 0.7862 (high risk), based on EV-001, EV-002, EV-003, EV-004.",
     "written_to_graph": true,
     "graph_case_id": "CASE-HHG-003"
   },
@@ -90,9 +149,9 @@
   "next_best_actions": {
     "initial": [
       {
-        "action": "VERIFY_WITH_CUSTOMER",
+        "action": "MONITOR_CARD",
         "route": "auto",
-        "reason": "R1: single weak signal, verify before any block"
+        "reason": "moderate signal, not enough to act - monitor while evidence accrues"
       }
     ],
     "final": [
@@ -107,7 +166,7 @@
         "reason": "R2: customer denial confirms a case"
       }
     ],
-    "what_changed": "Confidence before additional evidence was 0.5762 (actions: ['VERIFY_WITH_CUSTOMER']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.7562 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
+    "what_changed": "Confidence before additional evidence was 0.6062 (actions: ['MONITOR_CARD']). After customer_validation response ('Customer states they did not make this purchase and still has the card'), confidence moved to 0.7862 (actions: ['BLOCK_CARD', 'CREATE_CASE'])."
   },
   "sar": {
     "file": false,
@@ -120,5 +179,5 @@
   "stop_reason": "A simulated verification response settled the question.",
   "tool_calls": 10,
   "tokens": 20,
-  "latency_s": 9.57
+  "latency_s": 7.34
 }
