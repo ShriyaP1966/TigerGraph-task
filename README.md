@@ -77,8 +77,8 @@ See `https://team-synergy.hashnode.dev/selection-task-for-the-tigergraph-hacker-
 
 ## Team
 
-- P1 (graph & knowledge engineering) - Akanksha Mishra ([@akankshaa-ai](https://github.com/akankshaa-ai)
-- P2 (agent & backend engineering) - Darshita Lodh ([@darshita-builds](https://github.com/darshita-builds)
+- P1 (graph & knowledge engineering) - Akanksha Mishra ([@akankshaa-ai](https://github.com/akankshaa-ai))
+- P2 (agent & backend engineering) - Darshita Lodh ([@darshita-builds](https://github.com/darshita-builds))
 - P3 (UI, GraphRAG docs, demo, final fixes) — Shriya Patil ([@ShriyaP1966](https://github.com/ShriyaP1966))
 
 ## License
